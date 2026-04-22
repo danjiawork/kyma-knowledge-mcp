@@ -1,99 +1,140 @@
 # Kyma Companion MCP Server
 
-An MCP (Model Context Protocol) server that provides Kyma documentation and context through integration with Kyma Companion's RAG pipeline.
-
-## Overview
-
-This MCP server enables AI agents (like Cline) to access Kyma-specific knowledge by querying the Kyma Companion RAG API. It works alongside Kubernetes MCP servers to provide comprehensive Kyma context for AI-assisted operations.
-
-## Architecture
-
-```
-AI Agent (Cline) [MCP Client]
-    │
-    ├─── K8s MCP Server (K8s operations)
-    │
-    └─── Kyma MCP Server (this project)
-              │
-              └─── HTTP API
-                    │
-                    └─── Kyma Companion (RAG backend)
-```
-
-## Features
-
-### Available Tools
-
-- **search_kyma_docs** - Semantic search across Kyma documentation
-- **get_component_docs** - Retrieve component-specific documentation
-- **explain_kyma_concept** - Get explanations of Kyma concepts and terminology
-- **list_kyma_components** - List available Kyma components
-- **get_troubleshooting_guide** - Access troubleshooting documentation
+An MCP server that gives AI agents semantic search access to Kyma documentation, backed by the [Kyma Companion](https://github.com/kyma-project/kyma-companion) RAG pipeline.
 
 ## Prerequisites
 
-- Python 3.12+
-- Poetry
-- Running Kyma Companion instance with RAG API enabled
+- [uv](https://docs.astral.sh/uv/) — install with:
+  ```bash
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  ```
+- A running Kyma Companion instance with the RAG API enabled
 
-## Quick Start
+## Installation
 
-1. **Install dependencies:**
-```bash
-poetry install
-```
-
-2. **Configure environment:**
-```bash
-cp .env.example .env
-# Edit .env with your Kyma Companion URL
-```
-
-3. **Run the server:**
-```bash
-poetry run kyma-companion-mcp
-```
-
-## Configuration
-
-Configure via `.env` file or environment variables:
+### Claude Code
 
 ```bash
-KYMA_COMPANION_URL=http://localhost:8000  # Kyma Companion API URL
-REQUEST_TIMEOUT=30                        # Request timeout in seconds
-LOG_LEVEL=INFO                           # Logging level
+claude mcp add kyma-companion-mcp -s user \
+  -e KYMA_COMPANION_URL=https://<your-kyma-companion-host> \
+  -e OAUTH2_TOKEN_URL=https://<your-idp>/oauth2/token \
+  -e OAUTH2_CLIENT_ID=<client-id> \
+  -e OAUTH2_CLIENT_SECRET=<client-secret> \
+  -- uvx --from git+https://github.com/<your-org>/kyma-companion-mcp kyma-companion-mcp
 ```
 
-## Usage with Cline
+Omit the `OAUTH2_*` variables if your Kyma Companion instance does not require authentication.
 
-Add to Cline's MCP configuration:
+To change the URL later without re-running the command, edit `~/.claude.json` directly and restart the MCP server.
+
+Verify the server is connected:
+
+```bash
+claude mcp list
+```
+
+### Cline (VS Code)
+
+Add to Cline's MCP settings (`cline_mcp_settings.json`):
 
 ```json
 {
   "mcpServers": {
-    "kyma-companion-mcp-server": {
-      "disabled": false,
-      "command": "poetry",
-      "args": ["run", "kyma-companion-mcp"],
-      "cwd": "/path/to/kyma-companion-mcp"
+    "kyma-companion-mcp": {
+      "command": "uvx",
+      "args": [
+        "--from", "git+https://github.com/<your-org>/kyma-companion-mcp",
+        "kyma-companion-mcp"
+      ],
+      "env": {
+        "KYMA_COMPANION_URL": "https://<your-kyma-companion-host>",
+        "OAUTH2_TOKEN_URL": "https://<your-idp>/oauth2/token",
+        "OAUTH2_CLIENT_ID": "<client-id>",
+        "OAUTH2_CLIENT_SECRET": "<client-secret>"
+      }
     }
   }
 }
 ```
 
-## Example Workflows
+### Claude Desktop
 
-**Create a Kyma Function:**
-```
-User: "Create a Kyma Function for HTTP requests"
-→ Cline calls: search_kyma_docs("Kyma Function configuration")
-→ Cline applies: kubernetes.apply_manifest(function_yaml)
+Add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "kyma-companion-mcp": {
+      "command": "uvx",
+      "args": [
+        "--from", "git+https://github.com/<your-org>/kyma-companion-mcp",
+        "kyma-companion-mcp"
+      ],
+      "env": {
+        "KYMA_COMPANION_URL": "https://<your-kyma-companion-host>",
+        "OAUTH2_TOKEN_URL": "https://<your-idp>/oauth2/token",
+        "OAUTH2_CLIENT_ID": "<client-id>",
+        "OAUTH2_CLIENT_SECRET": "<client-secret>"
+      }
+    }
+  }
+}
 ```
 
-**Configure API Gateway:**
+## Configuration
+
+| Environment Variable | Default | Description |
+|---|---|---|
+| `KYMA_COMPANION_URL` | `http://localhost:8000` | Kyma Companion service URL |
+| `OAUTH2_TOKEN_URL` | _(empty)_ | OAuth2 token endpoint of your identity provider |
+| `OAUTH2_CLIENT_ID` | _(empty)_ | OAuth2 client ID |
+| `OAUTH2_CLIENT_SECRET` | _(empty)_ | OAuth2 client secret |
+| `KYMA_COMPANION_API_VERSION` | _(empty)_ | Optional API version prefix |
+| `REQUEST_TIMEOUT` | `30` | HTTP timeout in seconds |
+| `LOG_LEVEL` | `INFO` | Logging level |
+
+Leave all three `OAUTH2_*` variables empty for unauthenticated (local) access. When all three are set, the server uses the OAuth2 client credentials flow and automatically refreshes the token before expiry.
+
+### Changing the URL after installation
+
+For **Claude Code**, edit `~/.claude.json` and find the `env` block under `kyma-companion-mcp`, then restart the MCP server (`Cmd+Shift+P` → Reload Window in VS Code, or restart Claude Code).
+
+For **local development** (running from a clone), set variables in the `.env` file at the project root instead of passing them via the MCP config. The server reads the `.env` file using an absolute path, so it works regardless of the working directory the MCP host uses to launch the process.
+
+## Usage
+
+Once registered, describe what you need in natural language — the agent picks the right tool automatically:
+
+| What you say | Tool invoked |
+|---|---|
+| _"How do I configure APIRule with OAuth2?"_ | `search_kyma_docs` |
+| _"Show me the eventing-manager documentation"_ | `get_component_docs` |
+| _"What are Kyma modules?"_ | `explain_kyma_concept` |
+| _"api-gateway keeps crashing, help me debug"_ | `get_troubleshooting_guide` |
+
+To invoke a specific tool explicitly:
+
+> "Use `search_kyma_docs` to find how to expose a service with APIRule"
+
+## Extending with other MCP servers
+
+This server provides **Kyma knowledge only**. Pair it with additional MCP servers based on your workflow:
+
+| Need | Suggested MCP server |
+|---|---|
+| Kubernetes operations (get, apply, delete) | [mcp-server-kubernetes](https://github.com/strowk/mcp-server-kubernetes) |
+| Live cluster context (pods, logs, events) | [kubectl-mcp-tool](https://github.com/StreetLamb/kubectl-mcp-tool) |
+| Helm chart management | A Helm MCP server of your choice |
+
+All MCP servers are registered independently and work side by side — no aggregation layer needed.
+
+## Development
+
+```bash
+git clone https://github.com/<your-org>/kyma-companion-mcp
+cd kyma-companion-mcp
+uv sync --dev
+uv run pytest
 ```
-User: "Set up API Gateway with OAuth"
-→ Cline calls: search_kyma_docs("APIRule OAuth")
-→ Cline creates: kubernetes.create_secret(oauth_credentials)
-→ Cline applies: kubernetes.apply_manifest(apirule_yaml)
-```
+
+See [architecture.md](architecture.md) for design details.
