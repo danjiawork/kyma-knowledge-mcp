@@ -118,15 +118,15 @@ To invoke a specific tool explicitly:
 
 ## Extending with other MCP servers
 
-This server provides **Kyma knowledge only**. Pair it with additional MCP servers based on your workflow:
+This server covers Kyma knowledge only. For Kyma documentation queries and concept explanations, it is self-contained.
+
+If you also need to operate a Kyma cluster (apply manifests, inspect resources, read logs), check whether your agent already has built-in Kubernetes support. If not, you can register a K8s MCP server alongside this one. For example:
 
 | Need | Suggested MCP server |
 |---|---|
-| Kubernetes operations (get, apply, delete) | [mcp-server-kubernetes](https://github.com/strowk/mcp-server-kubernetes) |
-| Live cluster context (pods, logs, events) | [kubectl-mcp-tool](https://github.com/StreetLamb/kubectl-mcp-tool) |
-| Helm chart management | A Helm MCP server of your choice |
+| Kubernetes operations (get, apply, delete, logs, events) | [kubernetes-mcp-server](https://github.com/containers/kubernetes-mcp-server) (maintained by Red Hat) |
 
-All MCP servers are registered independently and work side by side — no aggregation layer needed.
+Each MCP server is registered independently, so you can add or remove them without affecting others.
 
 ## Development
 
