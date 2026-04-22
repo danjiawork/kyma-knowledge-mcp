@@ -124,7 +124,7 @@ If you also need to operate a Kyma cluster (apply manifests, inspect resources, 
 
 | Need | Suggested MCP server |
 |---|---|
-| Kubernetes operations (get, apply, delete, logs, events) | [kubernetes-mcp-server](https://github.com/containers/kubernetes-mcp-server) (maintained by Red Hat) |
+| Kubernetes operations (get, apply, delete, logs, events) | [kubernetes-mcp-server](https://github.com/containers/kubernetes-mcp-server) |
 
 Each MCP server is registered independently, so you can add or remove them without affecting others.
 
