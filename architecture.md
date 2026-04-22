@@ -1,177 +1,76 @@
-# Architecture Documentation
+# Architecture
 
-## System Overview
+## Purpose
 
-The Kyma Companion MCP Server is a bridge between AI agents and Kyma documentation, leveraging the Model Context Protocol (MCP) to provide Kyma-specific knowledge through integration with Kyma Companion's RAG pipeline.
+Kyma Companion MCP Server bridges AI agents and Kyma documentation. It implements the [Model Context Protocol](https://modelcontextprotocol.io) over stdio, so any MCP-compatible agent can query Kyma knowledge without being aware of the underlying RAG infrastructure.
 
-## High-Level Architecture
+The server is intentionally narrow in scope: **Kyma knowledge only**. Kubernetes operations belong in a separate MCP server registered alongside this one.
+
+## System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        AI Agent Layer                           │
-│                    (Cline, Claude Desktop, etc.)                │
-└────────────────────┬──────────────────────┬─────────────────────┘
-                     │                      │
-                     │ MCP Protocol         │ MCP Protocol
-                     │ (stdio)              │ (stdio)
-                     ▼                      ▼
-         ┌────────────────────┐  ┌──────────────────────────┐
-         │  Kubernetes MCP    │  │  Kyma Companion MCP      │
-         │     Server         │  │      Server              │
-         │                    │  │   (This Project)         │
-         │  - kubectl ops     │  │  - search_kyma_docs      │
-         │  - apply manifests │  │  - get_component_docs    │
-         │  - get resources   │  │  - explain_concept       │
-         └────────────────────┘  └───────────┬──────────────┘
-                                             │
-                                             │ HTTP/REST
-                                             │ (httpx async)
-                                             ▼
-                              ┌──────────────────────────────┐
-                              │   Kyma Companion Service     │
-                              │                              │
-                              │  ┌────────────────────────┐  │
-                              │  │   RAG API Endpoints    │  │
-                              │  │  /api/v1/rag/search    │  │
-                              │  │  /api/v1/rag/health    │  │
-                              │  │  /api/v1/rag/topics    │  │
-                              │  └───────────┬────────────┘  │
-                              │              │               │
-                              │              ▼               │
-                              │  ┌────────────────────────┐  │
-                              │  │    RAG Pipeline        │  │
-                              │  │  - Query Generation    │  │
-                              │  │  - Vector Search       │  │
-                              │  │  - Reranking          │  │
-                              │  └───────────┬────────────┘  │
-                              │              │               │
-                              │              ▼               │
-                              │  ┌────────────────────────┐  │
-                              │  │  HanaDB Vector Store   │  │
-                              │  │  - Embedded Docs       │  │
-                              │  │  - 13+ Components      │  │
-                              │  └────────────────────────┘  │
-                              └──────────────────────────────┘
+AI Agent (Claude Code, Cline, Claude Desktop, ...)
+    │
+    │  MCP Protocol (stdio)
+    ▼
+┌──────────────────────────────────────┐
+│       kyma-companion-mcp             │
+│                                      │
+│  search_kyma_docs                    │
+│  get_component_docs          ────────┼──► POST /api/tools/kyma/search
+│  explain_kyma_concept                │
+│  get_troubleshooting_guide           │
+└──────────────────────────────────────┘
+                                           │
+                                           ▼
+                              ┌────────────────────────┐
+                              │   Kyma Companion       │
+                              │                        │
+                              │   RAG Pipeline         │
+                              │   ├─ Vector search     │
+                              │   └─ Reranking         │
+                              │                        │
+                              │   HanaDB Vector Store  │
+                              │   (13+ components)     │
+                              └────────────────────────┘
 ```
 
-## Component Architecture
+## Why four tools instead of one
 
-### 1. MCP Server Core (`src/server.py`)
+All four tools call the same `POST /search` endpoint. The reason to keep them separate is **agent ergonomics**: descriptive tool names and targeted descriptions help the agent choose the right tool without needing explicit instruction. Each tool also constructs a different query string to steer the RAG search:
 
-```python
-┌─────────────────────────────────────┐
-│         MCP Server (stdio)          │
-│                                     │
-│  ┌──────────────────────────────┐   │
-│  │    Tool Registry             │   │
-│  │  - search_kyma_docs          │   │
-│  │  - get_component_docs        │   │
-│  │  - explain_kyma_concept      │   │
-│  │  - list_kyma_components      │   │
-│  │  - get_troubleshooting_guide │   │
-│  └──────────────────────────────┘   │
-│                                     │
-│  ┌──────────────────────────────┐   │
-│  │    Request Handlers          │   │
-│  │  - Parse MCP requests        │   │
-│  │  - Route to tool handler     │   │
-│  │  - Format responses          │   │
-│  └──────────────────────────────┘   │
-└─────────────────────────────────────┘
+| Tool | Query pattern |
+|---|---|
+| `search_kyma_docs` | raw user query |
+| `get_component_docs` | `{component} component documentation overview configuration` |
+| `explain_kyma_concept` | `What is {concept} in Kyma? Explain {concept}` |
+| `get_troubleshooting_guide` | `{component} troubleshooting {issue} error common issues` |
+
+If the agent calling this server is well-instructed and constructs queries itself, a single `search_kyma_docs` tool is sufficient.
+
+## Module responsibilities
+
+```
+kyma_companion_mcp/
+├── main.py        — entry point, logging setup, asyncio runner
+├── server.py      — MCP tool registry, request routing, response formatting
+├── rag_client.py  — async HTTP client for the Kyma Companion RAG API
+└── config.py      — Pydantic settings, reads from env / .env file
 ```
 
-**Responsibilities:**
-- Implement MCP protocol (list_tools, call_tool)
-- Define tool schemas and descriptions
-- Handle tool execution and error recovery
-- Format responses as structured markdown
+`server.py` is the only file that knows about MCP. `rag_client.py` is pure HTTP — it has no MCP dependency and can be tested or reused independently.
 
-### 2. RAG Client (`src/rag_client.py`)
+## Request flow
 
-```python
-┌─────────────────────────────────────┐
-│         RAG Client                  │
-│                                     │
-│  ┌──────────────────────────────┐   │
-│  │    HTTP Client (httpx)       │   │
-│  │  - Async request handling    │   │
-│  │  - Timeout management        │   │
-│  │  - Connection pooling        │   │
-│  └──────────────────────────────┘   │
-│                                     │
-│  ┌──────────────────────────────┐   │
-│  │    API Methods               │   │
-│  │  - health_check()            │   │
-│  │  - search_documents()        │   │
-│  │  - list_topics()             │   │
-│  └──────────────────────────────┘   │
-│                                     │
-│  ┌──────────────────────────────┐   │
-│  │    Response Models           │   │
-│  │  - SearchResponse            │   │
-│  │  - DocumentResult            │   │
-│  └──────────────────────────────┘   │
-└─────────────────────────────────────┘
 ```
-
-**Responsibilities:**
-- Abstract HTTP communication
-- Handle request/response serialization
-- Manage connection lifecycle
-- Provide typed interfaces
-
-### 3. Configuration (`src/config.py`)
-
-```python
-┌─────────────────────────────────────┐
-│    Configuration Management         │
-│                                     │
-│  ┌──────────────────────────────┐   │
-│  │  Pydantic Settings           │   │
-│  │  - kyma_companion_url        │   │
-│  │  - request_timeout           │   │
-│  │  - log_level                 │   │
-│  │  - server metadata           │   │
-│  └──────────────────────────────┘   │
-│                                     │
-└─────────────────────────────────────┘
+call_tool("get_troubleshooting_guide", {component: "api-gateway", issue: "503"})
+    │
+    ▼  server.py
+handle_get_troubleshooting_guide()
+    │  builds query: "api-gateway troubleshooting 503 error common issues"
+    ▼  rag_client.py
+search_documents(query=..., top_k=5)
+    │  POST {KYMA_COMPANION_URL}/api/tools/kyma/search
+    ▼
+SearchResponse → formatted markdown → TextContent[]
 ```
-
-**Responsibilities:**
-- Centralized configuration management
-- Environment-based configuration
-- Type-safe settings access
-- Validation and defaults
-
-
-## Extension Points
-
-### Adding New Tools
-
-1. **Define tool schema** in `list_tools()`:
-```python
-Tool(
-    name="new_tool",
-    description="Clear description for AI agents",
-    inputSchema={...}
-)
-```
-
-2. **Implement handler**:
-```python
-async def handle_new_tool(arguments: dict) -> list[TextContent]:
-    # Implementation
-    pass
-```
-
-3. **Register in router**:
-```python
-if name == "new_tool":
-    return await handle_new_tool(arguments)
-```
-
-### Adding New RAG Endpoints
-
-1. Add method in `rag_client.py`
-2. Update tool handlers to use new endpoint
-3. Consider if new tool is needed

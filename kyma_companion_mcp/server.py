@@ -114,18 +114,8 @@ async def list_tools() -> list[Tool]:
                 "required": ["concept"],
             },
         ),
-        Tool(
-            name="list_kyma_components",
-            description=(
-                "List all available Kyma components that have documentation indexed "
-                "in the system. Use this to discover what Kyma components are available "
-                "and can be queried for more information."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {},
-            },
-        ),
+        # Note: list_kyma_components tool removed as it's not essential
+        # Users can discover components through search_kyma_docs instead
         Tool(
             name="get_troubleshooting_guide",
             description=(
@@ -173,8 +163,6 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             return await handle_get_component_docs(arguments)
         elif name == "explain_kyma_concept":
             return await handle_explain_kyma_concept(arguments)
-        elif name == "list_kyma_components":
-            return await handle_list_kyma_components(arguments)
         elif name == "get_troubleshooting_guide":
             return await handle_get_troubleshooting_guide(arguments)
         else:
@@ -263,22 +251,7 @@ async def handle_explain_kyma_concept(arguments: dict[str, Any]) -> list[TextCon
     return [TextContent(type="text", text=result_text)]
 
 
-async def handle_list_kyma_components(arguments: dict[str, Any]) -> list[TextContent]:
-    """Handle list_kyma_components tool call."""
-    logger.info("Listing Kyma components")
-
-    topics_data = await rag_client.list_topics()
-
-    result_text = "# Available Kyma Components\n\n"
-    result_text += f"Total components: {topics_data.get('count', 0)}\n\n"
-
-    topics = topics_data.get("topics", [])
-    for topic in topics:
-        result_text += f"- **{topic}**\n"
-
-    result_text += f"\n{topics_data.get('description', '')}\n"
-
-    return [TextContent(type="text", text=result_text)]
+# Note: handle_list_kyma_components removed as list_topics endpoint is not available
 
 
 async def handle_get_troubleshooting_guide(arguments: dict[str, Any]) -> list[TextContent]:
