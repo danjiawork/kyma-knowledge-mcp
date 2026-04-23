@@ -9,11 +9,23 @@ from mcp.types import Tool, TextContent
 
 from .config import settings
 from .rag_client import RAGClient
+from .local_rag_client import LocalRAGClient
 
 logger = logging.getLogger(__name__)
 
-# Initialize RAG client
-rag_client = RAGClient()
+# Auto-select client based on config
+# - USE_REMOTE_MODE=true → remote mode (KC developer, needs KC backend)
+# - default             → local mode (no credentials, auto-downloads index)
+if settings.use_remote_mode:
+    rag_client: RAGClient | LocalRAGClient = RAGClient()
+    logger.info("Mode: REMOTE (Kyma Companion backend)")
+else:
+    rag_client = LocalRAGClient(
+        index_path=settings.local_index_path,
+        embed_model_override=settings.local_embed_model_override,
+        collection_name=settings.local_collection_name,
+    )
+    logger.info("Mode: LOCAL (ChromaDB, no credentials required)")
 
 # Create MCP server instance
 app = Server(settings.server_name)
