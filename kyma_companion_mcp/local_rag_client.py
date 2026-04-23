@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 _CACHE_DIR = Path.home() / ".kyma-companion"
 _INDEX_DOWNLOAD_URL = (
-    "https://github.com/kyma-project/kyma-companion-mcp"
-    "/releases/latest/download/kyma-docs-index.tar.gz"
+    "https://github.com/kyma-project/kyma-companion"
+    "/releases/download/docs-index-latest/kyma-docs-index.tar.gz"
 )
 _FALLBACK_EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 
