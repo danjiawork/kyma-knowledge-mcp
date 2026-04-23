@@ -1,56 +1,49 @@
 # Kyma Companion MCP Server
 
-An MCP server that gives AI agents semantic search access to Kyma documentation, backed by the [Kyma Companion](https://github.com/kyma-project/kyma-companion) RAG pipeline.
+An MCP server that gives AI agents (Claude Code, Cline, Github Copilot, etc.) semantic search access to Kyma documentation.
 
-## Prerequisites
+Two modes — pick the one that fits you:
 
-- [uv](https://docs.astral.sh/uv/) — install with:
+| Mode | Who it's for | Credentials needed |
+| --- | --- | --- |
+| **Local** (default) | Any Kyma user | None |
+| **Remote** | Kyma Companion developers | KC backend URL + optional OAuth2 |
+
+---
+
+## Local mode (default — no credentials required)
+
+Point the server at a pre-built Kyma docs index on your machine. All searches run entirely offline — no API keys, no network calls.
+
+> **Note:** Automatic index download is not yet available. Download the index archive from the [Releases page](https://github.com/kyma-project/kyma-companion-mcp/releases) and set `LOCAL_INDEX_PATH` as shown below.
+
+### Prerequisites
+
+- [uv](https://docs.astral.sh/uv/):
   ```bash
   curl -LsSf https://astral.sh/uv/install.sh | sh
   ```
-- A running Kyma Companion instance with the RAG API enabled
-
-## Installation
 
 ### Claude Code
 
 ```bash
-claude mcp add kyma-companion-mcp -s user \
-  -e KYMA_COMPANION_URL=https://<your-kyma-companion-host> \
-  -e OAUTH2_TOKEN_URL=https://<your-idp>/oauth2/token \
-  -e OAUTH2_CLIENT_ID=<client-id> \
-  -e OAUTH2_CLIENT_SECRET=<client-secret> \
-  -- uvx --from git+https://github.com/<your-org>/kyma-companion-mcp kyma-companion-mcp
-```
-
-Omit the `OAUTH2_*` variables if your Kyma Companion instance does not require authentication.
-
-To change the URL later without re-running the command, edit `~/.claude.json` directly and restart the MCP server.
-
-Verify the server is connected:
-
-```bash
-claude mcp list
+claude mcp add kyma -e LOCAL_INDEX_PATH=/path/to/kyma-docs-index.tar.gz \
+  -- uvx --from git+https://github.com/kyma-project/kyma-companion-mcp kyma-companion-mcp
 ```
 
 ### Cline (VS Code)
 
-Add to Cline's MCP settings (`cline_mcp_settings.json`):
-
 ```json
 {
   "mcpServers": {
-    "kyma-companion-mcp": {
+    "kyma": {
       "command": "uvx",
       "args": [
-        "--from", "git+https://github.com/<your-org>/kyma-companion-mcp",
+        "--from", "git+https://github.com/kyma-project/kyma-companion-mcp",
         "kyma-companion-mcp"
       ],
       "env": {
-        "KYMA_COMPANION_URL": "https://<your-kyma-companion-host>",
-        "OAUTH2_TOKEN_URL": "https://<your-idp>/oauth2/token",
-        "OAUTH2_CLIENT_ID": "<client-id>",
-        "OAUTH2_CLIENT_SECRET": "<client-secret>"
+        "LOCAL_INDEX_PATH": "/path/to/kyma-docs-index.tar.gz"
       }
     }
   }
@@ -59,49 +52,82 @@ Add to Cline's MCP settings (`cline_mcp_settings.json`):
 
 ### Claude Desktop
 
-Add to `claude_desktop_config.json`:
-
 ```json
 {
   "mcpServers": {
-    "kyma-companion-mcp": {
+    "kyma": {
       "command": "uvx",
       "args": [
-        "--from", "git+https://github.com/<your-org>/kyma-companion-mcp",
+        "--from", "git+https://github.com/kyma-project/kyma-companion-mcp",
         "kyma-companion-mcp"
       ],
       "env": {
-        "KYMA_COMPANION_URL": "https://<your-kyma-companion-host>",
-        "OAUTH2_TOKEN_URL": "https://<your-idp>/oauth2/token",
-        "OAUTH2_CLIENT_ID": "<client-id>",
-        "OAUTH2_CLIENT_SECRET": "<client-secret>"
+        "LOCAL_INDEX_PATH": "/path/to/kyma-docs-index.tar.gz"
       }
     }
   }
 }
 ```
 
-## Configuration
+Replace `/path/to/kyma-docs-index.tar.gz` with the path where you saved the downloaded archive.
 
-| Environment Variable | Default | Description |
+### Using an already-extracted index directory
+
+If you have already extracted the archive, you can point directly to the directory:
+
+```json
+"env": {
+  "LOCAL_INDEX_PATH": "/path/to/kyma_chroma_dir"
+}
+```
+
+---
+
+## Remote mode (Kyma Companion developers only)
+
+Connect the MCP server to a running Kyma Companion backend instead of the local index.
+
+Set `USE_REMOTE_MODE=true` and provide the backend URL:
+
+```json
+"env": {
+  "USE_REMOTE_MODE": "true",
+  "KYMA_COMPANION_URL": "http://localhost:8000"
+}
+```
+
+Add OAuth2 credentials if your KC instance requires authentication:
+
+```json
+"env": {
+  "USE_REMOTE_MODE": "true",
+  "KYMA_COMPANION_URL": "https://companion.cp.dev.kyma.cloud.sap",
+  "OAUTH2_TOKEN_URL": "https://<your-idp>/oauth2/token",
+  "OAUTH2_CLIENT_ID": "<client-id>",
+  "OAUTH2_CLIENT_SECRET": "<client-secret>"
+}
+```
+
+---
+
+## Configuration reference
+
+| Variable | Default | Description |
 |---|---|---|
-| `KYMA_COMPANION_URL` | `http://localhost:8000` | Kyma Companion service URL |
-| `OAUTH2_TOKEN_URL` | _(empty)_ | OAuth2 token endpoint of your identity provider |
-| `OAUTH2_CLIENT_ID` | _(empty)_ | OAuth2 client ID |
-| `OAUTH2_CLIENT_SECRET` | _(empty)_ | OAuth2 client secret |
-| `KYMA_COMPANION_API_VERSION` | _(empty)_ | Optional API version prefix |
-| `REQUEST_TIMEOUT` | `30` | HTTP timeout in seconds |
+| `USE_REMOTE_MODE` | `false` | Set to `true` to use KC backend instead of local index |
+| `LOCAL_INDEX_PATH` | _(empty)_ | Path to index archive or directory; auto-downloads if empty |
+| `LOCAL_EMBED_MODEL_OVERRIDE` | _(empty)_ | Override the embedding model (read from `meta.json` by default) |
+| `LOCAL_COLLECTION_NAME` | `kyma_docs` | ChromaDB collection name |
+| `KYMA_COMPANION_URL` | `http://localhost:8000` | KC backend URL (remote mode only) |
+| `OAUTH2_TOKEN_URL` | _(empty)_ | OAuth2 token endpoint (remote mode only) |
+| `OAUTH2_CLIENT_ID` | _(empty)_ | OAuth2 client ID (remote mode only) |
+| `OAUTH2_CLIENT_SECRET` | _(empty)_ | OAuth2 client secret (remote mode only) |
+| `REQUEST_TIMEOUT` | `30` | HTTP timeout in seconds (remote mode only) |
 | `LOG_LEVEL` | `INFO` | Logging level |
 
-Leave all three `OAUTH2_*` variables empty for unauthenticated (local) access. When all three are set, the server uses the OAuth2 client credentials flow and automatically refreshes the token before expiry.
+---
 
-### Changing the URL after installation
-
-For **Claude Code**, edit `~/.claude.json` and find the `env` block under `kyma-companion-mcp`, then restart the MCP server (`Cmd+Shift+P` → Reload Window in VS Code, or restart Claude Code).
-
-For **local development** (running from a clone), set variables in the `.env` file at the project root instead of passing them via the MCP config. The server reads the `.env` file using an absolute path, so it works regardless of the working directory the MCP host uses to launch the process.
-
-## Usage
+## Available tools
 
 Once registered, describe what you need in natural language — the agent picks the right tool automatically:
 
@@ -112,29 +138,44 @@ Once registered, describe what you need in natural language — the agent picks 
 | _"What are Kyma modules?"_ | `explain_kyma_concept` |
 | _"api-gateway keeps crashing, help me debug"_ | `get_troubleshooting_guide` |
 
-To invoke a specific tool explicitly:
-
-> "Use `search_kyma_docs` to find how to expose a service with APIRule"
-
-## Extending with other MCP servers
-
-This server covers Kyma knowledge only. For Kyma documentation queries and concept explanations, it is self-contained.
-
-If you also need to operate a Kyma cluster (apply manifests, inspect resources, read logs), check whether your agent already has built-in Kubernetes support. If not, you can register a K8s MCP server alongside this one. For example:
-
-| Need | Suggested MCP server |
-|---|---|
-| Kubernetes operations (get, apply, delete, logs, events) | [kubernetes-mcp-server](https://github.com/containers/kubernetes-mcp-server) |
-
-Each MCP server is registered independently, so you can add or remove them without affecting others.
+---
 
 ## Development
 
 ```bash
-git clone https://github.com/<your-org>/kyma-companion-mcp
+git clone https://github.com/kyma-project/kyma-companion-mcp
 cd kyma-companion-mcp
 uv sync --dev
 uv run pytest
 ```
 
-See [architecture.md](architecture.md) for design details.
+### Running locally against a local index
+
+Set `LOCAL_INDEX_PATH` in the `.env` file at the project root:
+
+```bash
+LOCAL_INDEX_PATH=/path/to/kyma-docs-index.tar.gz
+```
+
+Then run:
+
+```bash
+uv run kyma-companion-mcp
+```
+
+Startup logs confirm which mode is active:
+
+```text
+INFO: Mode: LOCAL (ChromaDB, no credentials required)
+# or
+INFO: Mode: REMOTE (Kyma Companion backend)
+```
+
+### Running against a local KC backend
+
+```bash
+USE_REMOTE_MODE=true
+KYMA_COMPANION_URL=http://localhost:8000
+```
+
+Start KC as usual (`poetry run fastapi dev src/main.py`), then start this server.
