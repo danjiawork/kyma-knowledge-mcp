@@ -1,9 +1,10 @@
 """Unit tests for the local ChromaDB indexer (fake embeddings, no network)."""
 
-import chromadb
 import json
 import tarfile
 from pathlib import Path
+
+import chromadb
 
 from kyma_knowledge_mcp.indexing.indexer import LocalFileIndexer, _clean_metadata
 

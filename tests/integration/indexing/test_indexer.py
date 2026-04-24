@@ -1,8 +1,9 @@
 """Integration tests for the indexer — uses real fastembed (downloads model on first run)."""
 
 import os
-import chromadb
 from pathlib import Path
+
+import chromadb
 
 from kyma_knowledge_mcp.indexing.indexer import FastEmbedEmbeddings, LocalFileIndexer
 

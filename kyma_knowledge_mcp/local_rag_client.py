@@ -173,7 +173,7 @@ class LocalRAGClient:
         documents = [
             DocumentResult(content=doc, metadata=meta or {})
             for doc, meta in zip(
-                results["documents"][0], results["metadatas"][0]
+                results["documents"][0], results["metadatas"][0], strict=False
             )
         ]
         return SearchResponse(

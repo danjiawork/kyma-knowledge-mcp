@@ -1,6 +1,7 @@
 """Integration tests for LocalRAGClient — real ChromaDB + real fastembed query."""
 
 import os
+
 import pytest
 
 from kyma_knowledge_mcp.indexing.indexer import FastEmbedEmbeddings, LocalFileIndexer
