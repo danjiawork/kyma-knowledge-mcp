@@ -20,7 +20,7 @@ claude mcp add kyma-knowledge-mcp \
 **Global** (all Claude Code sessions):
 
 ```bash
-claude mcp add kyma-knowledge-mcp --scope global \
+claude mcp add kyma-knowledge-mcp --scope user \
   -- uvx --from git+https://github.com/danjiawork/kyma-knowledge-mcp kyma-knowledge-mcp
 ```
 
