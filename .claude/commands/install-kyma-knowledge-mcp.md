@@ -16,7 +16,7 @@ Ask which MCP client(s) the user is using:
 If the user is on Claude Code, ask:
 
 - **Project-level**: only available in the current workspace (stored in `.mcp.json`)
-- **Global**: available in all Claude Code sessions (stored in `~/.claude/`)
+- **User**: available in all Claude Code sessions (stored in `~/.claude/`)
 
 ## Step 3 — provide the install command
 
@@ -27,10 +27,10 @@ claude mcp add kyma-knowledge-mcp \
   -- uvx --from git+https://github.com/danjiawork/kyma-knowledge-mcp kyma-knowledge-mcp
 ```
 
-### Claude Code — global
+### Claude Code — user (global)
 
 ```bash
-claude mcp add kyma-knowledge-mcp --scope global \
+claude mcp add kyma-knowledge-mcp --scope user \
   -- uvx --from git+https://github.com/danjiawork/kyma-knowledge-mcp kyma-knowledge-mcp
 ```
 
