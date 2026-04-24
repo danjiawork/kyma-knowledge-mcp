@@ -104,10 +104,10 @@ class LocalRAGClient:
             return cls._resolve_path(Path(index_path))
 
         cached = _CACHE_DIR / "index"
-        is_cached = (cached / "chroma.sqlite3").exists()
-        if is_cached and not cls._is_cache_stale(cached):
-            logger.info(f"Using cached index: {cached}")
-            return cached
+        chroma_sqlite = next(cached.rglob("chroma.sqlite3"), None) if cached.exists() else None
+        if chroma_sqlite and not cls._is_cache_stale(chroma_sqlite.parent):
+            logger.info(f"Using cached index: {chroma_sqlite.parent}")
+            return chroma_sqlite.parent
 
         return cls._download_and_cache()
 
