@@ -1,0 +1,34 @@
+name: Lint PR Title
+run-name: ${{github.event.pull_request.title}}
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - edited
+      - synchronize
+
+permissions: read-all
+
+jobs:
+  check:
+    name: Check Title
+    runs-on: ubuntu-latest
+    permissions:
+      actions: none
+    steps:
+      - uses: amannn/action-semantic-pull-request@ac7e3fc035c47465748bbcb1a822c1583cf79bbc
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            deps
+            chore
+            docs
+            feat
+            fix
+            refactor
+            test
+          requireScope: false
+          subjectPattern: ^(?![A-Z]).+$

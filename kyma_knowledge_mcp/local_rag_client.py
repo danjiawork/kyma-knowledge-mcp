@@ -14,9 +14,9 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
-_CACHE_DIR = Path.home() / ".kyma-companion"
+_CACHE_DIR = Path.home() / ".kyma-knowledge-mcp"
 _INDEX_DOWNLOAD_URL = (
-    "https://github.com/kyma-project/kyma-companion"
+    "https://github.com/danjiawork/kyma-knowledge-mcp"
     "/releases/download/docs-index-latest/kyma-docs-index.tar.gz"
 )
 _FALLBACK_EMBED_MODEL = "BAAI/bge-base-en-v1.5"
@@ -131,7 +131,7 @@ class LocalRAGClient:
         dest = _CACHE_DIR / "index"
 
         logger.info(f"Downloading Kyma docs index → {archive}")
-        logger.info("One-time download (~50 MB), cached in ~/.kyma-companion/")
+        logger.info("One-time download (~50 MB), cached in ~/.kyma-knowledge-mcp/")
         try:
             urllib.request.urlretrieve(_INDEX_DOWNLOAD_URL, archive)
         except Exception as e:

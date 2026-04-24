@@ -1,0 +1,57 @@
+name: Build and Publish Kyma Docs Index
+
+on:
+  schedule:
+    - cron: "0 9 * * 6"  # Every Saturday at 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  ROLLING_RELEASE_TAG: "docs-index-latest"
+  EMBED_MODEL: "BAAI/bge-base-en-v1.5"
+
+jobs:
+  build-index:
+    name: Build ChromaDB index and publish to rolling release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Ensure rolling release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! gh release view "${{ env.ROLLING_RELEASE_TAG }}" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            gh release create "${{ env.ROLLING_RELEASE_TAG }}" \
+              --repo "${{ github.repository }}" \
+              --title "Latest Kyma Docs Index" \
+              --notes "Auto-updated weekly. Contains the latest ChromaDB index of Kyma documentation." \
+              --prerelease
+          fi
+
+      - name: Fetch and index Kyma documentation
+        run: |
+          uv run kyma-knowledge-mcp-build-index \
+            --sources docs_sources.json \
+            --data-dir ./data \
+            --tmp-dir ./tmp \
+            --output-dir ./chroma_index \
+            --embed-model "${{ env.EMBED_MODEL }}" \
+            --package kyma-docs-index.tar.gz \
+            --log-level INFO
+
+      - name: Upload index to rolling release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ env.ROLLING_RELEASE_TAG }}" kyma-docs-index.tar.gz --clobber
