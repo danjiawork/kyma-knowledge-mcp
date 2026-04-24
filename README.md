@@ -80,7 +80,7 @@ uv sync
 
 # Fetch docs, build index, and package into a distributable archive
 uv run kyma-knowledge-mcp-build-index \
-  --sources docs_sources.json \
+  --sources kyma_knowledge_mcp/indexing/docs_sources.json \
   --data-dir /tmp/kmc-data \
   --tmp-dir /tmp/kmc-tmp \
   --output-dir /tmp/kmc-index \
@@ -93,13 +93,13 @@ uv run kyma-knowledge-mcp-build-index \
   --output-dir /tmp/kmc-index
 ```
 
-See [docs_sources.json](docs_sources.json) for the full sources list, or [e2e_docs_sources.json](e2e_docs_sources.json) for a minimal example.
+See [docs_sources.json](kyma_knowledge_mcp/indexing/docs_sources.json) for the full sources list, or [e2e_docs_sources.json](kyma_knowledge_mcp/indexing/e2e_docs_sources.json) for a minimal example.
 
 ### All options
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `--sources` | `./docs_sources.json` | Path to the sources JSON file |
+| `--sources` | `kyma_knowledge_mcp/indexing/docs_sources.json` | Path to the sources JSON file |
 | `--data-dir` | `./data` | Directory to store fetched markdown files |
 | `--tmp-dir` | `./tmp` | Temporary directory for git clones |
 | `--output-dir` | `~/.kyma-knowledge-mcp/index` | ChromaDB output directory |

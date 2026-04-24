@@ -16,8 +16,8 @@ def main() -> None:
     )
     parser.add_argument(
         "--sources",
-        default="./docs_sources.json",
-        help="Path to docs_sources.json (default: ./docs_sources.json)",
+        default=str(Path(__file__).parent / "indexing" / "docs_sources.json"),
+        help="Path to docs_sources.json (default: kyma_knowledge_mcp/indexing/docs_sources.json)",
     )
     parser.add_argument(
         "--data-dir",
