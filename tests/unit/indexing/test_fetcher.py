@@ -17,9 +17,17 @@ from kyma_knowledge_mcp.indexing.fetcher import (
 
 def test_get_documents_sources_valid_json(tmp_path: Path) -> None:
     sources_file = tmp_path / "sources.json"
-    sources_file.write_text(json.dumps([
-        {"name": "kyma", "source_type": "Github", "url": "https://github.com/kyma-project/kyma"},
-    ]))
+    sources_file.write_text(
+        json.dumps(
+            [
+                {
+                    "name": "kyma",
+                    "source_type": "Github",
+                    "url": "https://github.com/kyma-project/kyma",
+                },
+            ]
+        )
+    )
     result = get_documents_sources(str(sources_file))
     assert len(result) == 1
     assert result[0].name == "kyma"
@@ -87,13 +95,19 @@ def test_scroller_respects_include_files(tmp_path: Path) -> None:
 
 def test_fetcher_run_calls_fetch_for_each_source(tmp_path: Path) -> None:
     sources_file = tmp_path / "sources.json"
-    sources_file.write_text(json.dumps([
-        {"name": "a", "source_type": "Github", "url": "https://github.com/org/a"},
-        {"name": "b", "source_type": "Github", "url": "https://github.com/org/b"},
-    ]))
+    sources_file.write_text(
+        json.dumps(
+            [
+                {"name": "a", "source_type": "Github", "url": "https://github.com/org/a"},
+                {"name": "b", "source_type": "Github", "url": "https://github.com/org/b"},
+            ]
+        )
+    )
 
-    with patch("kyma_knowledge_mcp.indexing.fetcher._clone_repo") as mock_clone, \
-         patch("kyma_knowledge_mcp.indexing.fetcher.Scroller") as mock_scroller_cls:
+    with (
+        patch("kyma_knowledge_mcp.indexing.fetcher._clone_repo") as mock_clone,
+        patch("kyma_knowledge_mcp.indexing.fetcher.Scroller") as mock_scroller_cls,
+    ):
         fake_repo = tmp_path / "fake_repo"
         fake_repo.mkdir()
         mock_clone.return_value = str(fake_repo)

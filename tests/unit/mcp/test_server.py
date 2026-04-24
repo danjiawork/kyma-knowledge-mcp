@@ -72,9 +72,7 @@ async def test_explain_kyma_concept_not_found() -> None:
 async def test_get_troubleshooting_guide_with_issue() -> None:
     with patch("kyma_knowledge_mcp.server.rag_client") as mock_rag:
         mock_rag.search_documents = AsyncMock(return_value=_make_response())
-        await handle_get_troubleshooting_guide(
-            {"component": "api-gateway", "issue": "503 error"}
-        )
+        await handle_get_troubleshooting_guide({"component": "api-gateway", "issue": "503 error"})
         assert "503 error" in mock_rag.search_documents.call_args.kwargs["query"]
 
 

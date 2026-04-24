@@ -30,6 +30,7 @@ FASTEMBED_BATCH_SIZE = 4
 
 # ── header text helpers ──────────────────────────────────────────────────────
 
+
 def _remove_parentheses(text: str) -> str:
     return re.compile(r"\([^\[\]\(\)\{\}]+?\)").sub("", text)
 
@@ -60,23 +61,28 @@ def _extract_first_title(text: str) -> str | None:
 
 # ── document loading ─────────────────────────────────────────────────────────
 
+
 def _load_markdown_files(docs_path: str) -> list[Document]:
     docs = []
     for p in Path(docs_path).rglob("*.md"):
-        docs.append(Document(
-            page_content=p.read_text(errors="replace"),
-            metadata={"source": str(p)},
-        ))
+        docs.append(
+            Document(
+                page_content=p.read_text(errors="replace"),
+                metadata={"source": str(p)},
+            )
+        )
     return docs
 
 
 # ── embedding wrapper ────────────────────────────────────────────────────────
+
 
 class FastEmbedEmbeddings:
     """Thin wrapper around fastembed.TextEmbedding compatible with langchain."""
 
     def __init__(self, model_name: str, threads: int = 2) -> None:
         from fastembed import TextEmbedding
+
         self._model = TextEmbedding(model_name, threads=threads)
         self.model_name = model_name
 
@@ -84,10 +90,11 @@ class FastEmbedEmbeddings:
         return [v.tolist() for v in self._model.embed(texts, batch_size=batch_size)]
 
     def embed_query(self, text: str) -> list[float]:
-        return list(self._model.embed([text]))[0].tolist()
+        return [float(x) for x in list(self._model.embed([text]))[0]]
 
 
 # ── indexer ──────────────────────────────────────────────────────────────────
+
 
 def _clean_metadata(metadata: dict) -> dict:
     return {k: (v if v is not None else "") for k, v in metadata.items()}
@@ -183,7 +190,9 @@ class LocalFileIndexer:
                 body = chunk.page_content
                 prefix = f"# {t}\n" if body.strip().startswith(("#", "##", "###")) else f"# {t}\n\n"
                 yield Document(
-                    page_content=prefix + body.split("\n", 1)[-1] if body.strip().startswith(("#", "##", "###")) else prefix + body,
+                    page_content=prefix + body.split("\n", 1)[-1]
+                    if body.strip().startswith(("#", "##", "###"))
+                    else prefix + body,
                     metadata=chunk.metadata,
                 )
 
@@ -211,12 +220,12 @@ class LocalFileIndexer:
 
         total = len(chunks)
         for i in range(0, total, EMBED_BATCH_SIZE):
-            batch = chunks[i: i + EMBED_BATCH_SIZE]
+            batch = chunks[i : i + EMBED_BATCH_SIZE]
             texts = [d.page_content for d in batch]
             vectors = self.embedding.embed_documents(texts, batch_size=FASTEMBED_BATCH_SIZE)
             collection.add(
                 ids=[hashlib.sha256(t.encode()).hexdigest() for t in texts],
-                embeddings=vectors,
+                embeddings=vectors,  # type: ignore[arg-type]
                 documents=texts,
                 metadatas=[_clean_metadata(d.metadata) for d in batch],  # type: ignore[arg-type]
             )
@@ -225,10 +234,14 @@ class LocalFileIndexer:
             gc.collect()
 
         meta_path = Path(self.output_dir) / "meta.json"
-        meta_path.write_text(json.dumps({
-            "embed_model": self.embedding.model_name,
-            "build_date": datetime.now(UTC).strftime("%Y-%m-%d"),
-        }))
+        meta_path.write_text(
+            json.dumps(
+                {
+                    "embed_model": self.embedding.model_name,
+                    "build_date": datetime.now(UTC).strftime("%Y-%m-%d"),
+                }
+            )
+        )
         logger.info(f"Successfully indexed {total} chunks to '{self.output_dir}'.")
 
     @staticmethod

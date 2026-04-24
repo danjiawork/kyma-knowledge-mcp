@@ -20,6 +20,11 @@ rag_client: LocalRAGClient | None = None
 app = Server(settings.server_name)
 
 
+def _rag() -> LocalRAGClient:
+    assert rag_client is not None, "RAG client not initialized"
+    return rag_client
+
+
 @app.list_tools()
 async def list_tools() -> list[Tool]:
     """
@@ -131,7 +136,8 @@ async def list_tools() -> list[Tool]:
                     "component": {
                         "type": "string",
                         "description": (
-                            "The Kyma component to get troubleshooting info for. " "Examples: 'api-gateway', 'serverless', 'eventing'"
+                            "The Kyma component to get troubleshooting info for. "
+                            "Examples: 'api-gateway', 'serverless', 'eventing'"
                         ),
                     },
                     "issue": {
@@ -190,7 +196,7 @@ async def handle_search_kyma_docs(arguments: dict[str, Any]) -> list[TextContent
 
     logger.info(f"Searching Kyma docs: query='{query}', top_k={top_k}")
 
-    response = await rag_client.search_documents(query=query, top_k=top_k)
+    response = await _rag().search_documents(query=query, top_k=top_k)
 
     # Format the response
     result_text = f"# Search Results for: {query}\n\n"
@@ -215,7 +221,7 @@ async def handle_get_component_docs(arguments: dict[str, Any]) -> list[TextConte
 
     # Create a targeted query for the component
     query = f"{component} component documentation overview configuration"
-    response = await rag_client.search_documents(query=query, top_k=top_k)
+    response = await _rag().search_documents(query=query, top_k=top_k)
 
     # Format the response
     result_text = f"# {component.title()} Component Documentation\n\n"
@@ -237,7 +243,7 @@ async def handle_explain_kyma_concept(arguments: dict[str, Any]) -> list[TextCon
 
     # Create a query focused on explanation
     query = f"What is {concept} in Kyma? Explain {concept}"
-    response = await rag_client.search_documents(query=query, top_k=3)
+    response = await _rag().search_documents(query=query, top_k=3)
 
     # Format the response
     result_text = f"# Explanation: {concept}\n\n"
@@ -268,7 +274,7 @@ async def handle_get_troubleshooting_guide(arguments: dict[str, Any]) -> list[Te
     else:
         query = f"{component} troubleshooting common issues errors problems"
 
-    response = await rag_client.search_documents(query=query, top_k=5)
+    response = await _rag().search_documents(query=query, top_k=5)
 
     # Format the response
     result_text = f"# Troubleshooting Guide: {component}\n\n"
@@ -297,7 +303,7 @@ async def run_server() -> None:
     )
     logger.info(f"Starting {settings.server_name} v{settings.server_version}")
 
-    is_healthy = await rag_client.health_check()
+    is_healthy = await _rag().health_check()
     if not is_healthy:
         logger.warning("RAG API health check failed, but server will start anyway")
 

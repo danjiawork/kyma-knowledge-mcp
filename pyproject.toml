@@ -32,7 +32,11 @@ dev = [
     "pytest-cov>=4.1.0",
     "ruff>=0.3.0",
     "mypy>=1.9.0",
+    "taskipy>=1.12.0",
 ]
+
+[tool.taskipy.tasks]
+lint = "ruff check . && ruff format --check . && mypy kyma_knowledge_mcp/"
 
 [tool.ruff]
 line-length = 100

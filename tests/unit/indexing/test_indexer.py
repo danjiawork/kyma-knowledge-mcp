@@ -14,9 +14,7 @@ class _FakeEmbedding:
 
     model_name = "fake-model"
 
-    def embed_documents(
-        self, texts: list[str], batch_size: int = 8
-    ) -> list[list[float]]:
+    def embed_documents(self, texts: list[str], batch_size: int = 8) -> list[list[float]]:
         return [[0.1] * 384 for _ in texts]
 
     def embed_query(self, text: str) -> list[float]:  # noqa: ARG002
@@ -35,8 +33,7 @@ def test_local_file_indexer_creates_chromadb(tmp_path: Path) -> None:
         "# Introduction\n\n" + ("Kyma is an application runtime. " * 10)
     )
     (docs_dir / "api.md").write_text(
-        "# API Gateway\n\n## APIRule\n\n"
-        + ("An APIRule exposes a service. " * 10)
+        "# API Gateway\n\n## APIRule\n\n" + ("An APIRule exposes a service. " * 10)
     )
 
     output_dir = str(tmp_path / "chroma")
@@ -46,9 +43,7 @@ def test_local_file_indexer_creates_chromadb(tmp_path: Path) -> None:
         output_dir=output_dir,
     ).index()
 
-    collection = chromadb.PersistentClient(path=output_dir).get_collection(
-        "kyma_docs"
-    )
+    collection = chromadb.PersistentClient(path=output_dir).get_collection("kyma_docs")
     assert collection.count() > 0
 
     meta = json.loads((Path(output_dir) / "meta.json").read_text())
