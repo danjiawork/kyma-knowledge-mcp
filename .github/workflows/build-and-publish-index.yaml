@@ -42,7 +42,7 @@ jobs:
       - name: Fetch and index Kyma documentation
         run: |
           uv run kyma-knowledge-mcp-build-index \
-            --sources docs_sources.json \
+            --sources kyma_knowledge_mcp/indexing/docs_sources.json \
             --data-dir ./data \
             --tmp-dir ./tmp \
             --output-dir ./chroma_index \
