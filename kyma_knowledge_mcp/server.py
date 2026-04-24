@@ -1,5 +1,6 @@
 """MCP Server implementation for Kyma Context."""
 
+import asyncio
 import logging
 from typing import Any
 
@@ -12,16 +13,26 @@ from .local_rag_client import LocalRAGClient
 
 logger = logging.getLogger(__name__)
 
-# Initialized lazily in run_server() so tests can import this module without
-# triggering an index download.
 rag_client: LocalRAGClient | None = None
+_init_lock = asyncio.Lock()
 
 # Create MCP server instance
 app = Server(settings.server_name)
 
 
-def _rag() -> LocalRAGClient:
-    assert rag_client is not None, "RAG client not initialized"
+async def _get_rag() -> LocalRAGClient:
+    global rag_client
+    if rag_client is not None:
+        return rag_client
+    async with _init_lock:
+        if rag_client is None:
+            logger.info("Initializing RAG client on first use (may take a moment)...")
+            rag_client = await asyncio.to_thread(
+                LocalRAGClient,
+                settings.local_index_path,
+                settings.local_embed_model_override,
+                settings.local_collection_name,
+            )
     return rag_client
 
 
@@ -196,7 +207,7 @@ async def handle_search_kyma_docs(arguments: dict[str, Any]) -> list[TextContent
 
     logger.info(f"Searching Kyma docs: query='{query}', top_k={top_k}")
 
-    response = await _rag().search_documents(query=query, top_k=top_k)
+    response = await (await _get_rag()).search_documents(query=query, top_k=top_k)
 
     # Format the response
     result_text = f"# Search Results for: {query}\n\n"
@@ -221,7 +232,7 @@ async def handle_get_component_docs(arguments: dict[str, Any]) -> list[TextConte
 
     # Create a targeted query for the component
     query = f"{component} component documentation overview configuration"
-    response = await _rag().search_documents(query=query, top_k=top_k)
+    response = await (await _get_rag()).search_documents(query=query, top_k=top_k)
 
     # Format the response
     result_text = f"# {component.title()} Component Documentation\n\n"
@@ -243,7 +254,7 @@ async def handle_explain_kyma_concept(arguments: dict[str, Any]) -> list[TextCon
 
     # Create a query focused on explanation
     query = f"What is {concept} in Kyma? Explain {concept}"
-    response = await _rag().search_documents(query=query, top_k=3)
+    response = await (await _get_rag()).search_documents(query=query, top_k=3)
 
     # Format the response
     result_text = f"# Explanation: {concept}\n\n"
@@ -274,7 +285,7 @@ async def handle_get_troubleshooting_guide(arguments: dict[str, Any]) -> list[Te
     else:
         query = f"{component} troubleshooting common issues errors problems"
 
-    response = await _rag().search_documents(query=query, top_k=5)
+    response = await (await _get_rag()).search_documents(query=query, top_k=5)
 
     # Format the response
     result_text = f"# Troubleshooting Guide: {component}\n\n"
@@ -295,17 +306,6 @@ async def handle_get_troubleshooting_guide(arguments: dict[str, Any]) -> list[Te
 
 async def run_server() -> None:
     """Run the MCP server with stdio transport."""
-    global rag_client
-    rag_client = LocalRAGClient(
-        index_path=settings.local_index_path,
-        embed_model_override=settings.local_embed_model_override,
-        collection_name=settings.local_collection_name,
-    )
     logger.info(f"Starting {settings.server_name} v{settings.server_version}")
-
-    is_healthy = await _rag().health_check()
-    if not is_healthy:
-        logger.warning("RAG API health check failed, but server will start anyway")
-
     async with stdio_server() as (read_stream, write_stream):
         await app.run(read_stream, write_stream, app.create_initialization_options())

@@ -85,5 +85,6 @@ To revert to the auto-downloaded index, remove that line.
 ## Notes
 
 - On first run the server auto-downloads the pre-built index (~50 MB) to `~/.kyma-knowledge-mcp/`. No credentials needed.
+- The MCP connection is instant; the first search query may take a minute while the index loads — subsequent queries are fast.
 - `uvx` requires `uv` to be installed. If not present: `curl -LsSf https://astral.sh/uv/install.sh | sh`
 - After adding, verify with `claude mcp list` (Claude Code) or by restarting the client.
