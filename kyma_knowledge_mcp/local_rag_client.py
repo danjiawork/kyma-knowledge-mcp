@@ -14,9 +14,9 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
-_CACHE_DIR = Path.home() / ".kyma-companion"
+_CACHE_DIR = Path.home() / ".kyma-knowledge-mcp"
 _INDEX_DOWNLOAD_URL = (
-    "https://github.com/kyma-project/kyma-companion"
+    "https://github.com/danjiawork/kyma-knowledge-mcp"
     "/releases/download/docs-index-latest/kyma-docs-index.tar.gz"
 )
 _FALLBACK_EMBED_MODEL = "BAAI/bge-base-en-v1.5"
@@ -55,40 +55,31 @@ class LocalRAGClient:
         resolved = self._ensure_index(index_path)
 
         meta = self._read_meta(resolved)
-        embed_model = (
-            embed_model_override
-            or meta.get("embed_model", "")
-            or _FALLBACK_EMBED_MODEL
-        )
+        embed_model = embed_model_override or meta.get("embed_model", "") or _FALLBACK_EMBED_MODEL
         build_date = meta.get("build_date", "unknown")
 
         logger.info(f"Loading local ChromaDB from: {resolved}")
         logger.info(f"Index build date: {build_date}")
-        self._collection = (
-            chromadb.PersistentClient(path=str(resolved))
-            .get_collection(collection_name)
+        self._collection = chromadb.PersistentClient(path=str(resolved)).get_collection(
+            collection_name
         )
         logger.info(f"Loading fastembed model: {embed_model}")
         self._model = TextEmbedding(model_name=embed_model)
-        logger.info(
-            f"LocalRAGClient ready — {self._collection.count()} docs indexed"
-        )
+        logger.info(f"LocalRAGClient ready — {self._collection.count()} docs indexed")
 
     @staticmethod
-    def _read_meta(chroma_dir: Path) -> dict:
+    def _read_meta(chroma_dir: Path) -> dict[str, Any]:
         """Read meta.json and return its contents, or empty dict if absent."""
         meta = chroma_dir / "meta.json"
         if meta.exists():
             try:
-                return json.loads(meta.read_text())
+                return dict(json.loads(meta.read_text()))
             except Exception:
                 logger.warning(f"Failed to parse meta.json at {meta}")
         return {}
 
     @staticmethod
-    def _is_cache_stale(
-        chroma_dir: Path, max_age_days: int = _CACHE_MAX_AGE_DAYS
-    ) -> bool:
+    def _is_cache_stale(chroma_dir: Path, max_age_days: int = _CACHE_MAX_AGE_DAYS) -> bool:
         """Return True if the cached index is older than max_age_days."""
         meta = chroma_dir / "meta.json"
         if not meta.exists():
@@ -98,14 +89,10 @@ class LocalRAGClient:
             build_date_str = data.get("build_date", "")
             if not build_date_str:
                 return True
-            build_date = datetime.strptime(
-                build_date_str, "%Y-%m-%d"
-            ).replace(tzinfo=UTC)
+            build_date = datetime.strptime(build_date_str, "%Y-%m-%d").replace(tzinfo=UTC)
             age_days = (datetime.now(UTC) - build_date).days
             if age_days >= max_age_days:
-                logger.info(
-                    f"Cached index is {age_days} days old — refreshing"
-                )
+                logger.info(f"Cached index is {age_days} days old — refreshing")
                 return True
             return False
         except Exception:
@@ -131,7 +118,7 @@ class LocalRAGClient:
         dest = _CACHE_DIR / "index"
 
         logger.info(f"Downloading Kyma docs index → {archive}")
-        logger.info("One-time download (~50 MB), cached in ~/.kyma-companion/")
+        logger.info("One-time download (~50 MB), cached in ~/.kyma-knowledge-mcp/")
         try:
             urllib.request.urlretrieve(_INDEX_DOWNLOAD_URL, archive)
         except Exception as e:
@@ -160,9 +147,7 @@ class LocalRAGClient:
             return chroma_dir.parent if chroma_dir else p.parent
         return p
 
-    async def search_documents(
-        self, query: str, top_k: int = 5
-    ) -> SearchResponse:
+    async def search_documents(self, query: str, top_k: int = 5) -> SearchResponse:
         logger.info(f"Local search: query='{query}', top_k={top_k}")
         query_vec = list(self._model.embed([query]))[0].tolist()
         results = self._collection.query(
@@ -170,15 +155,13 @@ class LocalRAGClient:
             n_results=top_k,
             include=["documents", "metadatas"],
         )
+        assert results["documents"] is not None
+        assert results["metadatas"] is not None
         documents = [
-            DocumentResult(content=doc, metadata=meta or {})
-            for doc, meta in zip(
-                results["documents"][0], results["metadatas"][0]
-            )
+            DocumentResult(content=doc, metadata=dict(meta) if meta else {})
+            for doc, meta in zip(results["documents"][0], results["metadatas"][0], strict=False)
         ]
-        return SearchResponse(
-            query=query, documents=documents, count=len(documents)
-        )
+        return SearchResponse(query=query, documents=documents, count=len(documents))
 
     async def health_check(self) -> bool:
         return self._collection.count() > 0

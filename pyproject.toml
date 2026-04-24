@@ -1,26 +1,29 @@
 [project]
-name = "kyma-companion-mcp"
+name = "kyma-knowledge-mcp"
 version = "0.1.0"
-description = "MCP server providing Kyma documentation and context via RAG integration with Kyma Companion"
+description = "MCP server providing local Kyma knowledge and context for AI agents"
 requires-python = ">=3.12"
 dependencies = [
     "mcp>=1.0.0",
-    "httpx>=0.27.0",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
     "chromadb>=0.6.0",
     "fastembed>=0.4.0",
+    "langchain-core>=0.3.0",
+    "langchain-text-splitters>=0.3.0",
+    "tiktoken>=0.7.0",
 ]
 
 [project.scripts]
-kyma-companion-mcp = "kyma_companion_mcp.main:main"
+kyma-knowledge-mcp = "kyma_knowledge_mcp.main:main"
+kyma-knowledge-mcp-build-index = "kyma_knowledge_mcp.build_index:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["kyma_companion_mcp"]
+packages = ["kyma_knowledge_mcp"]
 
 [dependency-groups]
 dev = [
@@ -29,11 +32,17 @@ dev = [
     "pytest-cov>=4.1.0",
     "ruff>=0.3.0",
     "mypy>=1.9.0",
+    "taskipy>=1.12.0",
 ]
+
+[tool.taskipy.tasks]
+lint = "ruff check . && ruff format --check . && mypy kyma_knowledge_mcp/"
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.ruff.lint]
 select = [
     "E",
     "W",

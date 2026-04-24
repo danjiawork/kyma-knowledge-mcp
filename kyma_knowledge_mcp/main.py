@@ -1,4 +1,4 @@
-"""Main entry point for Kyma Companion MCP Server."""
+"""Main entry point for Kyma Knowledge MCP Server."""
 
 import asyncio
 import logging
@@ -9,7 +9,6 @@ from .server import run_server
 
 
 def setup_logging() -> None:
-    """Configure logging for the application."""
     logging.basicConfig(
         level=getattr(logging, settings.log_level.upper()),
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -18,12 +17,10 @@ def setup_logging() -> None:
 
 
 def main() -> None:
-    """Main entry point."""
     setup_logging()
     logger = logging.getLogger(__name__)
-
     try:
-        logger.info("Starting Kyma Companion MCP Server...")
+        logger.info("Starting Kyma Knowledge MCP Server...")
         asyncio.run(run_server())
     except KeyboardInterrupt:
         logger.info("Server interrupted by user")
