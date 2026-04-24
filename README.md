@@ -24,7 +24,7 @@ claude mcp add kyma-knowledge-mcp --scope user \
   -- uvx --from git+https://github.com/danjiawork/kyma-knowledge-mcp kyma-knowledge-mcp
 ```
 
-On first run the server auto-downloads the pre-built index (~50 MB) and caches it in `~/.kyma-knowledge-mcp/`.
+On first run the server auto-downloads the pre-built index (~50 MB) and caches it in `~/.kyma-knowledge-mcp/`. The MCP connection itself is instant; the first search query may take a minute while the index loads, subsequent queries are fast.
 
 ### Cline (VS Code)
 
