@@ -30,7 +30,7 @@ dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=4.1.0",
-    "ruff>=0.3.0",
+    "ruff>=0.15.12",
     "mypy>=1.9.0",
     "taskipy>=1.12.0",
 ]
