@@ -10,7 +10,9 @@ from collections.abc import Generator
 from datetime import UTC, datetime
 from pathlib import Path
 
+import chromadb
 import tiktoken
+from fastembed import TextEmbedding
 from langchain_core.documents import Document
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 
@@ -81,8 +83,6 @@ class FastEmbedEmbeddings:
     """Thin wrapper around fastembed.TextEmbedding compatible with langchain."""
 
     def __init__(self, model_name: str, threads: int = 2) -> None:
-        from fastembed import TextEmbedding
-
         self._model = TextEmbedding(model_name, threads=threads)
         self.model_name = model_name
 
@@ -198,7 +198,6 @@ class LocalFileIndexer:
 
     def index(self) -> None:
         """Load, chunk, embed, and store documents in a ChromaDB persistent store."""
-        import chromadb
 
         docs = _load_markdown_files(self.docs_path)
         chunks = list(self._add_titles(docs))
