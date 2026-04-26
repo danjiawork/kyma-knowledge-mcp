@@ -6,7 +6,9 @@ from kyma_knowledge_mcp.local_rag_client import DocumentResult, SearchResponse
 from kyma_knowledge_mcp.server import (
     handle_explain_kyma_concept,
     handle_get_component_docs,
+    handle_get_contribution_guide,
     handle_get_troubleshooting_guide,
+    handle_search_kyma_contributor_docs,
     handle_search_kyma_docs,
     list_tools,
 )
@@ -24,7 +26,7 @@ def _empty_response() -> SearchResponse:
     return SearchResponse(query="test", documents=[], count=0)
 
 
-async def test_list_tools_returns_four_tools() -> None:
+async def test_list_tools_returns_six_tools() -> None:
     tools = await list_tools()
     names = {t.name for t in tools}
     assert names == {
@@ -32,6 +34,8 @@ async def test_list_tools_returns_four_tools() -> None:
         "get_component_docs",
         "explain_kyma_concept",
         "get_troubleshooting_guide",
+        "search_kyma_contributor_docs",
+        "get_contribution_guide",
     }
 
 
@@ -81,3 +85,39 @@ async def test_get_troubleshooting_guide_no_results() -> None:
         mock_rag.search_documents = AsyncMock(return_value=_empty_response())
         result = await handle_get_troubleshooting_guide({"component": "eventing"})
         assert "No troubleshooting guides found" in result[0].text
+
+
+async def test_search_kyma_contributor_docs_returns_results() -> None:
+    mock_dev = AsyncMock()
+    mock_dev._available = True
+    mock_dev.search_documents = AsyncMock(return_value=_make_response("contrib info"))
+    with patch("kyma_knowledge_mcp.server.rag_client_dev", mock_dev):
+        result = await handle_search_kyma_contributor_docs(
+            {"query": "how to contribute", "top_k": 3}
+        )
+    assert "contrib info" in result[0].text
+
+
+async def test_search_kyma_contributor_docs_not_indexed() -> None:
+    mock_dev = AsyncMock()
+    mock_dev._available = False
+    with patch("kyma_knowledge_mcp.server.rag_client_dev", mock_dev):
+        result = await handle_search_kyma_contributor_docs({"query": "test"})
+    assert "not yet indexed" in result[0].text
+
+
+async def test_get_contribution_guide_returns_results() -> None:
+    mock_dev = AsyncMock()
+    mock_dev._available = True
+    mock_dev.search_documents = AsyncMock(return_value=_make_response("guide content"))
+    with patch("kyma_knowledge_mcp.server.rag_client_dev", mock_dev):
+        result = await handle_get_contribution_guide({"component": "api-gateway"})
+    assert "guide content" in result[0].text
+
+
+async def test_get_contribution_guide_not_indexed() -> None:
+    mock_dev = AsyncMock()
+    mock_dev._available = False
+    with patch("kyma_knowledge_mcp.server.rag_client_dev", mock_dev):
+        result = await handle_get_contribution_guide({"component": "serverless"})
+    assert "not yet indexed" in result[0].text

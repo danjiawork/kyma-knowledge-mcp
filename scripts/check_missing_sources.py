@@ -2,6 +2,7 @@
 
 Usage:
     uv run python scripts/check_missing_sources.py
+    uv run python scripts/check_missing_sources.py --auto-add   # write missing entries to JSON
     uv run python scripts/check_missing_sources.py --sources kyma_knowledge_mcp/indexing/docs_sources.json
 """
 
@@ -46,9 +47,30 @@ def has_user_docs(org: str, repo: str) -> str | None:
     return None
 
 
+def build_source_entry(org: str, repo: str, doc_path: str, html_url: str) -> dict:
+    """Build a conservative docs_sources.json entry for a repo."""
+    entry: dict = {
+        "name": repo,
+        "source_type": "Github",
+        "url": f"{html_url}.git",
+    }
+    if doc_path.endswith("/user"):
+        entry["include_files"] = [f"{doc_path}/*"]
+        entry["exclude_files"] = [f"{doc_path}/README.md", "*/_sidebar.md"]
+    else:
+        entry["include_files"] = ["README.md", f"{doc_path}/*"]
+        entry["exclude_files"] = ["*/_sidebar.md"]
+    return entry
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--sources", default=str(SOURCES_DEFAULT))
+    parser.add_argument(
+        "--auto-add",
+        action="store_true",
+        help="Automatically add missing entries to docs_sources.json with conservative include patterns",
+    )
     args = parser.parse_args()
 
     sources_path = Path(args.sources)
@@ -69,19 +91,37 @@ def main() -> None:
         repos = gh(f"orgs/{org}/repos?per_page=100&sort=pushed")
         for repo in repos:
             name = repo.get("name", "")
-            url = repo.get("html_url", "").rstrip("/")
-            if url in indexed_urls:
+            html_url = repo.get("html_url", "").rstrip("/")
+            if html_url in indexed_urls:
                 continue
             if repo.get("archived") or repo.get("fork"):
                 continue
             doc_path = has_user_docs(org, name)
             if doc_path:
-                missing.append({"name": name, "url": f"{url}.git", "doc_path": doc_path})
+                missing.append(
+                    {"name": name, "html_url": html_url, "doc_path": doc_path, "org": org}
+                )
                 print(f"  MISSING  {name:40s}  {doc_path}")
 
-    print(f"\nFound {len(missing)} repo(s) with docs not in sources:")
-    for m in missing:
-        print(f"  {m['url']}  →  {m['doc_path']}")
+    if not missing:
+        print("\nNo missing sources found.")
+        return
+
+    print(f"\nFound {len(missing)} repo(s) with docs not in sources.")
+
+    if not args.auto_add:
+        print("\nRe-run with --auto-add to write these entries to docs_sources.json.")
+        return
+
+    new_entries = [
+        build_source_entry(m["org"], m["name"], m["doc_path"], m["html_url"]) for m in missing
+    ]
+    sources.extend(new_entries)
+    sources_path.write_text(json.dumps(sources, indent=2) + "\n")
+    print(f"\nAdded {len(new_entries)} new entrie(s) to {sources_path}")
+    print("Review the added entries and adjust include_files as needed before merging.")
+    for e in new_entries:
+        print(f"  - {e['name']}: {e['include_files']}")
 
 
 if __name__ == "__main__":

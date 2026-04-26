@@ -14,6 +14,7 @@ from .local_rag_client import LocalRAGClient
 logger = logging.getLogger(__name__)
 
 rag_client: LocalRAGClient | None = None
+rag_client_dev: LocalRAGClient | None = None
 _init_lock = asyncio.Lock()
 
 # Create MCP server instance
@@ -34,6 +35,22 @@ async def _get_rag() -> LocalRAGClient:
                 settings.local_collection_name,
             )
     return rag_client
+
+
+async def _get_dev_rag() -> LocalRAGClient:
+    global rag_client_dev
+    if rag_client_dev is not None:
+        return rag_client_dev
+    async with _init_lock:
+        if rag_client_dev is None:
+            logger.info("Initializing developer RAG client on first use...")
+            rag_client_dev = await asyncio.to_thread(
+                LocalRAGClient,
+                settings.local_index_path,
+                settings.local_embed_model_override,
+                settings.local_dev_collection_name,
+            )
+    return rag_client_dev
 
 
 @app.list_tools()
@@ -159,6 +176,58 @@ async def list_tools() -> list[Tool]:
                 "required": ["component"],
             },
         ),
+        Tool(
+            name="search_kyma_contributor_docs",
+            description=(
+                "Search Kyma contributor documentation for information about how to "
+                "develop, contribute to, or extend Kyma components. Use this when you "
+                "need information about development setup, architecture decisions, "
+                "contribution guidelines, or internal component design. "
+                "This tool searches the developer-facing documentation collection."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": (
+                            "The search query. Examples: 'how to run api-gateway tests', "
+                            "'eventing-manager architecture', 'contributing to serverless'"
+                        ),
+                    },
+                    "top_k": {
+                        "type": "integer",
+                        "description": "Number of results to return (1-20)",
+                        "default": 5,
+                        "minimum": 1,
+                        "maximum": 20,
+                    },
+                },
+                "required": ["query"],
+            },
+        ),
+        Tool(
+            name="get_contribution_guide",
+            description=(
+                "Get the contribution guide for a specific Kyma component. "
+                "Use this when you need to understand how to contribute to a "
+                "Kyma module — development environment setup, testing approach, "
+                "PR process, or coding conventions."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "component": {
+                        "type": "string",
+                        "description": (
+                            "Name of the Kyma component. Examples: 'api-gateway', "
+                            "'serverless', 'eventing-manager', 'telemetry-manager'"
+                        ),
+                    },
+                },
+                "required": ["component"],
+            },
+        ),
     ]
 
 
@@ -183,6 +252,10 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             return await handle_explain_kyma_concept(arguments)
         elif name == "get_troubleshooting_guide":
             return await handle_get_troubleshooting_guide(arguments)
+        elif name == "search_kyma_contributor_docs":
+            return await handle_search_kyma_contributor_docs(arguments)
+        elif name == "get_contribution_guide":
+            return await handle_get_contribution_guide(arguments)
         else:
             return [
                 TextContent(
@@ -300,6 +373,63 @@ async def handle_get_troubleshooting_guide(arguments: dict[str, Any]) -> list[Te
             result_text += "---\n\n"
     else:
         result_text += f"No troubleshooting guides found for {component}\n"
+
+    return [TextContent(type="text", text=result_text)]
+
+
+_DEV_NOT_INDEXED = (
+    "Developer documentation not yet indexed. "
+    "Rebuild the index after adding developer sources to docs_sources.json."
+)
+
+
+async def handle_search_kyma_contributor_docs(arguments: dict[str, Any]) -> list[TextContent]:
+    """Handle search_kyma_contributor_docs tool call."""
+    query = arguments.get("query", "")
+    top_k = arguments.get("top_k", 5)
+
+    logger.info(f"Searching contributor docs: query='{query}', top_k={top_k}")
+
+    dev_rag = await _get_dev_rag()
+    if not dev_rag._available:
+        return [TextContent(type="text", text=_DEV_NOT_INDEXED)]
+
+    response = await dev_rag.search_documents(query=query, top_k=top_k)
+
+    result_text = f"# Contributor Docs Search: {query}\n\n"
+    if response.count == 0:
+        result_text += "No contributor documentation found for this query.\n"
+    else:
+        result_text += f"Found {response.count} relevant sections:\n\n"
+        for i, doc in enumerate(response.documents, 1):
+            result_text += f"## Result {i}\n\n"
+            result_text += f"{doc.content}\n\n"
+            if doc.metadata:
+                result_text += f"**Source:** {doc.metadata.get('source', 'Unknown')}\n\n"
+            result_text += "---\n\n"
+
+    return [TextContent(type="text", text=result_text)]
+
+
+async def handle_get_contribution_guide(arguments: dict[str, Any]) -> list[TextContent]:
+    """Handle get_contribution_guide tool call."""
+    component = arguments.get("component", "")
+
+    logger.info(f"Getting contribution guide: component='{component}'")
+
+    dev_rag = await _get_dev_rag()
+    if not dev_rag._available:
+        return [TextContent(type="text", text=_DEV_NOT_INDEXED)]
+
+    query = f"{component} contribution guide development setup architecture testing"
+    response = await dev_rag.search_documents(query=query, top_k=5)
+
+    result_text = f"# Contribution Guide: {component}\n\n"
+    if response.count == 0:
+        result_text += f"No contribution guide found for {component}.\n"
+    else:
+        for doc in response.documents:
+            result_text += f"{doc.content}\n\n"
 
     return [TextContent(type="text", text=result_text)]
 

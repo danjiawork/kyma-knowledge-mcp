@@ -56,6 +56,10 @@ Once registered, describe what you need in natural language — the agent picks 
 | _"Show me the eventing-manager documentation"_ | `get_component_docs` |
 | _"What are Kyma modules?"_ | `explain_kyma_concept` |
 | _"api-gateway keeps crashing, help me debug"_ | `get_troubleshooting_guide` |
+| _"How do I contribute to telemetry-manager?"_ | `get_contribution_guide` |
+| _"What is the testing strategy for api-gateway?"_ | `search_kyma_contributor_docs` |
+
+The first four tools search **user-facing documentation** (how to deploy, configure, and operate Kyma). The last two search **contributor documentation** (architecture decisions, development setup, testing guides, contribution workflows).
 
 ---
 
@@ -100,9 +104,10 @@ See [docs_sources.json](kyma_knowledge_mcp/indexing/docs_sources.json) for the f
 | Option | Default | Description |
 | --- | --- | --- |
 | `--sources` | `kyma_knowledge_mcp/indexing/docs_sources.json` | Path to the sources JSON file |
-| `--data-dir` | `./data` | Directory to store fetched markdown files |
+| `--data-dir` | `./data/user` | Directory to store fetched user-doc markdown files |
+| `--dev-data-dir` | `./data/developer` | Directory to store fetched contributor markdown files |
 | `--tmp-dir` | `./tmp` | Temporary directory for git clones |
-| `--output-dir` | `~/.kyma-knowledge-mcp/index` | ChromaDB output directory |
+| `--output-dir` | `~/.kyma-knowledge-mcp/index` | ChromaDB output directory (both collections written here) |
 | `--embed-model` | `BAAI/bge-small-en-v1.5` | fastembed model name |
 | `--package` | _(empty)_ | If set, create a `.tar.gz` archive at this path |
 | `--skip-fetch` | `false` | Skip fetch and reuse existing `--data-dir` |
