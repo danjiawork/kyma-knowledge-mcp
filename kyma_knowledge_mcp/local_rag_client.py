@@ -10,6 +10,7 @@ from typing import Any
 
 import chromadb
 from fastembed import TextEmbedding
+from flashrank import Ranker, RerankRequest
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -44,6 +45,11 @@ class LocalRAGClient:
     If index_path is empty, the latest index is auto-downloaded from GitHub
     Releases on first run and cached in ~/.kyma-knowledge-mcp/. The cache is
     refreshed automatically when it is older than _CACHE_MAX_AGE_DAYS.
+
+    When reranker_model is set, a cross-encoder reranker (via flashrank) is
+    loaded and used to re-score candidates fetched from the vector store before
+    returning the final top_k results.  Set fetch_multiplier to control how
+    many extra candidates are fetched for reranking (fetch_n = top_k × multiplier).
     """
 
     def __init__(
@@ -51,6 +57,8 @@ class LocalRAGClient:
         index_path: str = "",
         embed_model_override: str = "",
         collection_name: str = "kyma_docs",
+        reranker_model: str = "",
+        fetch_multiplier: int = 3,
     ):
         resolved = self._ensure_index(index_path)
 
@@ -77,6 +85,14 @@ class LocalRAGClient:
         logger.info(f"Loading fastembed model: {embed_model}")
         self._model = TextEmbedding(model_name=embed_model)
         logger.info(f"LocalRAGClient ready — {self._collection.count()} docs indexed")
+
+        self._reranker: Ranker | None = None
+        self._fetch_multiplier = fetch_multiplier
+        if reranker_model:
+            reranker_cache = str(_CACHE_DIR / "reranker")
+            logger.info(f"Loading reranker model: {reranker_model}")
+            self._reranker = Ranker(model_name=reranker_model, cache_dir=reranker_cache)
+            logger.info("Reranker ready")
 
     @staticmethod
     def _read_meta(chroma_dir: Path) -> dict[str, Any]:
@@ -158,14 +174,21 @@ class LocalRAGClient:
             return chroma_dir.parent if chroma_dir else p.parent
         return p
 
-    async def search_documents(self, query: str, top_k: int = 5) -> SearchResponse:
+    async def search_documents(self, query: str, top_k: int = 10) -> SearchResponse:
         if not self._available or self._collection is None:
             return SearchResponse(query=query, documents=[], count=0)
-        logger.info(f"Local search: query='{query}', top_k={top_k}")
+
+        fetch_n = (
+            min(top_k * self._fetch_multiplier, self._collection.count())
+            if self._reranker
+            else top_k
+        )
+        logger.info(f"Local search: query='{query}', top_k={top_k}, fetch_n={fetch_n}")
+
         query_vec = list(self._model.embed([query]))[0].tolist()
         results = self._collection.query(
             query_embeddings=[query_vec],
-            n_results=top_k,
+            n_results=fetch_n,
             include=["documents", "metadatas"],
         )
         assert results["documents"] is not None
@@ -174,6 +197,13 @@ class LocalRAGClient:
             DocumentResult(content=doc, metadata=dict(meta) if meta else {})
             for doc, meta in zip(results["documents"][0], results["metadatas"][0], strict=False)
         ]
+
+        if self._reranker and documents:
+            passages = [{"id": i, "text": doc.content} for i, doc in enumerate(documents)]
+            reranked = self._reranker.rerank(RerankRequest(query=query, passages=passages))
+            id_to_doc = dict(enumerate(documents))
+            documents = [id_to_doc[r["id"]] for r in reranked[:top_k]]
+
         return SearchResponse(query=query, documents=documents, count=len(documents))
 
     async def health_check(self) -> bool:

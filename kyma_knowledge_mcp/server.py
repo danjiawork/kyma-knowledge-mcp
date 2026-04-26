@@ -13,6 +13,8 @@ from .local_rag_client import LocalRAGClient
 
 logger = logging.getLogger(__name__)
 
+_DEFAULT_TOP_K = settings.default_top_k
+
 rag_client: LocalRAGClient | None = None
 rag_client_dev: LocalRAGClient | None = None
 _init_lock = asyncio.Lock()
@@ -33,6 +35,8 @@ async def _get_rag() -> LocalRAGClient:
                 settings.local_index_path,
                 settings.local_embed_model_override,
                 settings.local_collection_name,
+                settings.reranker_model,
+                settings.reranker_fetch_multiplier,
             )
     return rag_client
 
@@ -49,6 +53,8 @@ async def _get_dev_rag() -> LocalRAGClient:
                 settings.local_index_path,
                 settings.local_embed_model_override,
                 settings.local_dev_collection_name,
+                settings.reranker_model,
+                settings.reranker_fetch_multiplier,
             )
     return rag_client_dev
 
@@ -85,7 +91,7 @@ async def list_tools() -> list[Tool]:
                     "top_k": {
                         "type": "integer",
                         "description": "Number of results to return (1-20)",
-                        "default": 5,
+                        "default": 10,
                         "minimum": 1,
                         "maximum": 20,
                     },
@@ -116,9 +122,9 @@ async def list_tools() -> list[Tool]:
                     "top_k": {
                         "type": "integer",
                         "description": "Number of documentation chunks to return",
-                        "default": 5,
+                        "default": 10,
                         "minimum": 1,
-                        "maximum": 10,
+                        "maximum": 20,
                     },
                 },
                 "required": ["component"],
@@ -198,7 +204,7 @@ async def list_tools() -> list[Tool]:
                     "top_k": {
                         "type": "integer",
                         "description": "Number of results to return (1-20)",
-                        "default": 5,
+                        "default": 10,
                         "minimum": 1,
                         "maximum": 20,
                     },
@@ -276,7 +282,7 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
 async def handle_search_kyma_docs(arguments: dict[str, Any]) -> list[TextContent]:
     """Handle search_kyma_docs tool call."""
     query = arguments.get("query", "")
-    top_k = arguments.get("top_k", 5)
+    top_k = arguments.get("top_k", _DEFAULT_TOP_K)
 
     logger.info(f"Searching Kyma docs: query='{query}', top_k={top_k}")
 
@@ -299,7 +305,7 @@ async def handle_search_kyma_docs(arguments: dict[str, Any]) -> list[TextContent
 async def handle_get_component_docs(arguments: dict[str, Any]) -> list[TextContent]:
     """Handle get_component_docs tool call."""
     component = arguments.get("component", "")
-    top_k = arguments.get("top_k", 5)
+    top_k = arguments.get("top_k", _DEFAULT_TOP_K)
 
     logger.info(f"Getting component docs: component='{component}', top_k={top_k}")
 
@@ -327,7 +333,7 @@ async def handle_explain_kyma_concept(arguments: dict[str, Any]) -> list[TextCon
 
     # Create a query focused on explanation
     query = f"What is {concept} in Kyma? Explain {concept}"
-    response = await (await _get_rag()).search_documents(query=query, top_k=3)
+    response = await (await _get_rag()).search_documents(query=query, top_k=5)
 
     # Format the response
     result_text = f"# Explanation: {concept}\n\n"
@@ -358,7 +364,7 @@ async def handle_get_troubleshooting_guide(arguments: dict[str, Any]) -> list[Te
     else:
         query = f"{component} troubleshooting common issues errors problems"
 
-    response = await (await _get_rag()).search_documents(query=query, top_k=5)
+    response = await (await _get_rag()).search_documents(query=query, top_k=8)
 
     # Format the response
     result_text = f"# Troubleshooting Guide: {component}\n\n"
@@ -386,7 +392,7 @@ _DEV_NOT_INDEXED = (
 async def handle_search_kyma_contributor_docs(arguments: dict[str, Any]) -> list[TextContent]:
     """Handle search_kyma_contributor_docs tool call."""
     query = arguments.get("query", "")
-    top_k = arguments.get("top_k", 5)
+    top_k = arguments.get("top_k", _DEFAULT_TOP_K)
 
     logger.info(f"Searching contributor docs: query='{query}', top_k={top_k}")
 

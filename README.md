@@ -72,6 +72,28 @@ Set these as environment variables or in a `.env` file at the project root. See 
 | `LOCAL_INDEX_PATH` | _(empty)_ | Path to index directory or `.tar.gz` archive; auto-downloads if empty |
 | `LOCAL_EMBED_MODEL_OVERRIDE` | _(empty)_ | Override the embedding model (read from `meta.json` by default) |
 | `LOG_LEVEL` | `INFO` | Logging level (`DEBUG` for verbose output) |
+| `DEFAULT_TOP_K` | `10` | Default number of results for user-facing search tools |
+| `RERANKER_MODEL` | `ms-marco-TinyBERT-L-2-v2` | Cross-encoder reranker model. Set to empty string to disable. See [Query Pipeline](#query-pipeline) below. |
+| `RERANKER_FETCH_MULTIPLIER` | `3` | Candidates fetched per final result (`fetch_n = top_k × multiplier`). Only used when `RERANKER_MODEL` is set. |
+
+---
+
+## Query Pipeline
+
+By default the server uses a **two-stage pipeline**:
+
+1. **Retrieve** — bi-encoder vector search (fastembed + ChromaDB) fetches `top_k × RERANKER_FETCH_MULTIPLIER` candidates.
+2. **Rerank** — a [flashrank](https://github.com/PrithivirajDamodaran/FlashRank) cross-encoder (`ms-marco-TinyBERT-L-2-v2`) re-scores every candidate against the full query and returns the top `top_k` results.
+
+Cross-encoders compare query and document jointly, catching relevance signals that pure vector similarity misses. The overhead is ~100–200 ms per query on CPU, negligible for an MCP server used by AI agents. The reranker model (~30 MB, Apache 2.0) is downloaded once on first startup and cached in `~/.kyma-knowledge-mcp/reranker/`.
+
+To disable reranking (pure vector search, faster):
+
+```bash
+RERANKER_MODEL=
+```
+
+**Higher-quality model** (slower ~4–5×, ~130 MB, Apache 2.0): `ms-marco-MiniLM-L-12-v2`
 
 ---
 
