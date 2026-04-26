@@ -201,7 +201,7 @@ class LocalRAGClient:
         if self._reranker and documents:
             passages = [{"id": i, "text": doc.content} for i, doc in enumerate(documents)]
             reranked = self._reranker.rerank(RerankRequest(query=query, passages=passages))
-            id_to_doc = {i: doc for i, doc in enumerate(documents)}
+            id_to_doc = dict(enumerate(documents))
             documents = [id_to_doc[r["id"]] for r in reranked[:top_k]]
 
         return SearchResponse(query=query, documents=documents, count=len(documents))
