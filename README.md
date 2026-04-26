@@ -1,6 +1,6 @@
 # Kyma Knowledge MCP Server
 
-An MCP server that gives AI agents semantic search access to Kyma documentation - entirely offline, no credentials required.
+An MCP server that gives AI agents semantic search access to Kyma documentation — no credentials or backend service required. The index is auto-downloaded on first run and cached locally; subsequent queries run fully offline.
 
 ---
 
