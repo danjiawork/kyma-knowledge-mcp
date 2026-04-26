@@ -39,6 +39,13 @@ jobs:
               --prerelease
           fi
 
+      - name: Check for undiscovered doc sources (informational)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "## Undiscovered doc sources" >> $GITHUB_STEP_SUMMARY
+          uv run python scripts/check_missing_sources.py >> $GITHUB_STEP_SUMMARY 2>&1 || true
+
       - name: Fetch and index Kyma documentation
         run: |
           uv run kyma-knowledge-mcp-build-index \
