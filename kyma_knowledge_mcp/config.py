@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     # Override the embedding model read from meta.json (usually not needed)
     local_embed_model_override: str = ""
     local_collection_name: str = "kyma_docs"
+    local_dev_collection_name: str = "kyma_docs_developer"
 
     # Logging
     log_level: str = "INFO"

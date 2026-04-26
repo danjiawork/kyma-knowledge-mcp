@@ -13,17 +13,28 @@ AI Agent (Claude Code, Cline, Claude Desktop, ...)
     │
     │  MCP Protocol (stdio)
     ▼
-┌─────────────────────────────────────────────────┐
-│            kyma-knowledge-mcp                   │
-│                                                 │
-│  search_kyma_docs                               │
-│  get_component_docs          ───► LocalRAGClient│
-│  explain_kyma_concept                │          │
-│  get_troubleshooting_guide           │          │
-│                                      ▼          │
-│                             ChromaDB (on disk)  │
-│                             fastembed (in-proc) │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                  kyma-knowledge-mcp                     │
+│                                                         │
+│  User tools                  Developer tools            │
+│  ─────────────────           ───────────────────────    │
+│  search_kyma_docs            search_kyma_contributor_   │
+│  get_component_docs    ───►  docs                       │
+│  explain_kyma_concept        get_contribution_guide     │
+│  get_troubleshooting_        │                          │
+│  guide               │       │                          │
+│                      ▼       ▼                          │
+│              LocalRAGClient  LocalRAGClient             │
+│              (user)          (developer)                │
+│                      │       │                          │
+│                      ▼       ▼                          │
+│        ChromaDB collection  ChromaDB collection         │
+│        "kyma_docs"          "kyma_docs_developer"       │
+│        (user-facing docs)   (contributor docs)          │
+│                      └───────┘                          │
+│                      same on-disk database              │
+│                      fastembed (in-proc)                │
+└─────────────────────────────────────────────────────────┘
          ▲
          │  first run: auto-download index (~50 MB)
          │  cache: ~/.kyma-knowledge-mcp/index/
@@ -32,7 +43,7 @@ AI Agent (Claude Code, Cline, Claude Desktop, ...)
     (kyma-docs-index.tar.gz)
 ```
 
-There is no remote RAG backend. All embedding and vector search runs locally inside the server process.
+There is no remote RAG backend. All embedding and vector search runs locally inside the server process. The two collections share one ChromaDB database on disk but are queried independently, so user and developer content never compete for top-k slots.
 
 ## Index lifecycle
 
@@ -40,26 +51,38 @@ The ChromaDB index is built separately from the MCP server (typically in CI) and
 
 ```
 GitHub repos                    CI / developer machine
-(kyma docs)                     ──────────────────────────────
+(kyma docs)                     ──────────────────────────────────
      │                          kyma-knowledge-mcp-build-index
      │  git clone --depth=1          │
-     ▼                               │  Step 1: fetch
-DocumentsFetcher                     │   clone repos → ./data/
-(fetcher.py)                         │
-     │                               │  Step 2: index
-     ▼                               │   chunk markdown (MarkdownHeaderTextSplitter)
-LocalFileIndexer                     │   embed with fastembed (BAAI/bge-small-en-v1.5)
-(indexer.py)                         │   store in ChromaDB PersistentClient
+     ▼                               │  Step 1a: fetch user sources
+DocumentsFetcher                     │   (collection: "user" in docs_sources.json)
+(fetcher.py)                         │   clone repos → ./data/user/
      │                               │
+     │                               │  Step 1b: fetch developer sources
+     │                               │   (collection: "developer" in docs_sources.json)
+     │                               │   clone repos → ./data/developer/
+     │                               │
+     ▼                               │  Step 2a: index user docs
+LocalFileIndexer                     │   chunk → embed → ChromaDB "kyma_docs"
+(indexer.py)                         │
+     │                               │  Step 2b: index developer docs
+     │                               │   chunk → embed → ChromaDB "kyma_docs_developer"
      ▼                               ▼
 ChromaDB dir  ──► tar.gz ──► GitHub Release (docs-index-latest)
+(both collections in same dir)
 ```
 
-At MCP server startup, `LocalRAGClient` checks `~/.kyma-knowledge-mcp/index/`. If absent or stale (> 8 days), it auto-downloads and extracts the latest release archive. The embedding model name is recorded in `meta.json` inside the archive so that query-time embedding always matches build-time embedding.
+Sources are tagged with `"collection": "user"` or `"collection": "developer"` in `docs_sources.json`. Entries without a tag default to `"user"`.
 
-## Why four tools instead of one
+At MCP server startup, `LocalRAGClient` checks `~/.kyma-knowledge-mcp/index/`. If absent or stale (> 8 days), it auto-downloads and extracts the latest release archive. The embedding model name is recorded in `meta.json` inside the archive so that query-time embedding always matches build-time embedding. The developer `LocalRAGClient` starts gracefully even if the `kyma_docs_developer` collection is absent (e.g. on older cached indexes), returning an informative message instead of crashing.
 
-All four tools call the same `LocalRAGClient.search_documents()`. The reason to keep them separate is **agent ergonomics**: descriptive tool names and targeted descriptions help the agent choose the right tool without needing explicit instruction. Each tool constructs a different query string to steer the vector search:
+## Why six tools instead of one
+
+All six tools call `LocalRAGClient.search_documents()`. The reason to keep them separate is **agent ergonomics**: descriptive tool names and targeted descriptions help the agent choose the right tool without explicit instruction.
+
+The tools are split into two groups, each backed by a separate ChromaDB collection:
+
+**User tools** — query `kyma_docs` (user-facing documentation):
 
 | Tool | Query pattern |
 |---|---|
@@ -67,6 +90,15 @@ All four tools call the same `LocalRAGClient.search_documents()`. The reason to 
 | `get_component_docs` | `{component} component documentation overview configuration` |
 | `explain_kyma_concept` | `What is {concept} in Kyma? Explain {concept}` |
 | `get_troubleshooting_guide` | `{component} troubleshooting {issue} error common issues` |
+
+**Developer tools** — query `kyma_docs_developer` (contributor documentation):
+
+| Tool | Query pattern |
+|---|---|
+| `search_kyma_contributor_docs` | raw developer query |
+| `get_contribution_guide` | `{component} contribution guide development setup architecture testing` |
+
+Keeping the two collections separate prevents user docs and contributor docs from competing for top-k slots in the same query.
 
 ## Module responsibilities
 

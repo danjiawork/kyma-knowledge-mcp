@@ -1,6 +1,7 @@
 """CLI entry point for building the local Kyma docs index."""
 
 import argparse
+import json
 import logging
 import sys
 from pathlib import Path
@@ -21,8 +22,13 @@ def main() -> None:
     )
     parser.add_argument(
         "--data-dir",
-        default="./data",
-        help="Directory to store fetched markdown files (default: ./data)",
+        default="./data/user",
+        help="Directory for user doc markdown files (default: ./data/user)",
+    )
+    parser.add_argument(
+        "--dev-data-dir",
+        default="./data/developer",
+        help="Directory for developer doc markdown files (default: ./data/developer)",
     )
     parser.add_argument(
         "--tmp-dir",
@@ -65,29 +71,58 @@ def main() -> None:
 
     # Import here so logging is configured first
     from kyma_knowledge_mcp.indexing.fetcher import DocumentsFetcher
-    from kyma_knowledge_mcp.indexing.indexer import FastEmbedEmbeddings, LocalFileIndexer
+    from kyma_knowledge_mcp.indexing.indexer import (
+        COLLECTION_NAME,
+        COLLECTION_NAME_DEV,
+        FastEmbedEmbeddings,
+        LocalFileIndexer,
+    )
+
+    if not Path(args.sources).exists():
+        logger.error(f"Sources file not found: {args.sources}")
+        sys.exit(1)
+
+    all_sources = json.loads(Path(args.sources).read_text())
+    user_sources = [s for s in all_sources if s.get("collection", "user") == "user"]
+    dev_sources = [s for s in all_sources if s.get("collection") == "developer"]
+
+    embedding = FastEmbedEmbeddings(args.embed_model)
 
     if not args.skip_fetch:
-        if not Path(args.sources).exists():
-            logger.error(f"Sources file not found: {args.sources}")
-            sys.exit(1)
-        logger.info("Step 1/2: Fetching documents...")
+        logger.info("Step 1/2: Fetching user documents...")
         DocumentsFetcher(
-            source_file=args.sources,
+            source_file="",
             output_dir=args.data_dir,
             tmp_dir=args.tmp_dir,
+            sources_list=user_sources,
         ).run()
+        if dev_sources:
+            logger.info("Step 1b/2: Fetching developer documents...")
+            DocumentsFetcher(
+                source_file="",
+                output_dir=args.dev_data_dir,
+                tmp_dir=args.tmp_dir,
+                sources_list=dev_sources,
+            ).run()
     else:
         logger.info("Skipping fetch step.")
 
-    logger.info("Step 2/2: Indexing documents...")
-    embedding = FastEmbedEmbeddings(args.embed_model)
-    indexer = LocalFileIndexer(
+    logger.info("Step 2/2: Indexing user documents...")
+    LocalFileIndexer(
         docs_path=args.data_dir,
         embedding=embedding,
         output_dir=args.output_dir,
-    )
-    indexer.index()
+        collection_name=COLLECTION_NAME,
+    ).index()
+
+    if dev_sources:
+        logger.info("Step 2b/2: Indexing developer documents...")
+        LocalFileIndexer(
+            docs_path=args.dev_data_dir,
+            embedding=embedding,
+            output_dir=args.output_dir,
+            collection_name=COLLECTION_NAME_DEV,
+        ).index()
 
     if args.package:
         logger.info(f"Packaging index → {args.package}")

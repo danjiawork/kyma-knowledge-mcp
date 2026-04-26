@@ -60,9 +60,20 @@ class LocalRAGClient:
 
         logger.info(f"Loading local ChromaDB from: {resolved}")
         logger.info(f"Index build date: {build_date}")
-        self._collection = chromadb.PersistentClient(path=str(resolved)).get_collection(
-            collection_name
-        )
+        chroma_client = chromadb.PersistentClient(path=str(resolved))
+        try:
+            self._collection: chromadb.Collection | None = chroma_client.get_collection(
+                collection_name
+            )
+            self._available = True
+        except ValueError:
+            logger.warning(
+                f"Collection '{collection_name}' not found in index at {resolved}. "
+                "Rebuild the index to enable this collection."
+            )
+            self._collection = None
+            self._available = False
+            return
         logger.info(f"Loading fastembed model: {embed_model}")
         self._model = TextEmbedding(model_name=embed_model)
         logger.info(f"LocalRAGClient ready — {self._collection.count()} docs indexed")
@@ -148,6 +159,8 @@ class LocalRAGClient:
         return p
 
     async def search_documents(self, query: str, top_k: int = 5) -> SearchResponse:
+        if not self._available or self._collection is None:
+            return SearchResponse(query=query, documents=[], count=0)
         logger.info(f"Local search: query='{query}', top_k={top_k}")
         query_vec = list(self._model.embed([query]))[0].tolist()
         results = self._collection.query(
@@ -164,4 +177,4 @@ class LocalRAGClient:
         return SearchResponse(query=query, documents=documents, count=len(documents))
 
     async def health_check(self) -> bool:
-        return self._collection.count() > 0
+        return self._available and self._collection is not None and self._collection.count() > 0

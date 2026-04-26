@@ -86,14 +86,23 @@ def _clone_repo(repo_url: str, clone_dir: str) -> str:
 
 
 class DocumentsFetcher:
-    """Fetches markdown documents from sources defined in a JSON file."""
+    """Fetches markdown documents from a JSON file or list of source dicts."""
 
-    def __init__(self, source_file: str, output_dir: str, tmp_dir: str) -> None:
+    def __init__(
+        self,
+        source_file: str,
+        output_dir: str,
+        tmp_dir: str,
+        sources_list: list[dict] | None = None,
+    ) -> None:
         self.output_dir = output_dir
         self.tmp_dir = tmp_dir
         shutil.rmtree(self.output_dir, ignore_errors=True)
         shutil.rmtree(self.tmp_dir, ignore_errors=True)
-        self.sources = get_documents_sources(source_file)
+        if sources_list is not None:
+            self.sources = [DocumentsSource(**item) for item in sources_list]
+        else:
+            self.sources = get_documents_sources(source_file)
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)
         Path(self.tmp_dir).mkdir(parents=True, exist_ok=True)
 

@@ -1,5 +1,31 @@
 [
   {
+    "name": "kyma",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/kyma.git",
+    "include_files": [
+      "docs/01-overview/README.md",
+      "docs/02-get-started/01-quick-install.md",
+      "docs/02-get-started/08-uninstall-upgrade-kyma-module.md",
+      "docs/04-operation-guides/operations/10-backup-kyma.md",
+      "docs/04-operation-guides/troubleshooting/01-k3d-fails-on-linux.md",
+      "docs/04-operation-guides/troubleshooting/01-kube-troubleshoot-kubectl-port-forward.md",
+      "docs/04-operation-guides/troubleshooting/01-kyma-domain-unresolvable.md",
+      "docs/04-operation-guides/troubleshooting/security/sec-01-certificates-gardener.md",
+      "docs/glossary.md"
+    ]
+  },
+  {
+    "name": "lifecycle-manager",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/lifecycle-manager.git",
+    "include_files": [
+      "docs/user/01-10-kyma-crd.md",
+      "docs/user/02-unmanaging-modules.md",
+      "docs/user/03-skipping-maintenance-windows.md"
+    ]
+  },
+  {
     "name": "btp-cloud-platform",
     "source_type": "Github",
     "url": "https://github.com/SAP-docs/btp-cloud-platform.git",
@@ -203,6 +229,72 @@
       "tutorials/user-role-assignment/user-role-assignment.md",
       "tutorials/integrate-with-work-zone-kymaruntime/integrate-with-work-zone-kymaruntime.md",
       "tutorials/set-up-cicd-kyma/set-up-cicd-kyma.md"
+    ]
+  },
+  {
+    "name": "lifecycle-manager",
+    "collection": "developer",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/lifecycle-manager.git",
+    "include_files": [
+      "CONTRIBUTING.md",
+      "docs/contributor/*"
+    ]
+  },
+  {
+    "name": "api-gateway",
+    "collection": "developer",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/api-gateway.git",
+    "include_files": [
+      "CONTRIBUTING.md",
+      "docs/contributor/*"
+    ]
+  },
+  {
+    "name": "serverless",
+    "collection": "developer",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/serverless.git",
+    "include_files": [
+      "CONTRIBUTING.md",
+      "docs/contributor/*"
+    ]
+  },
+  {
+    "name": "eventing-manager",
+    "collection": "developer",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/eventing-manager.git",
+    "include_files": [
+      "CONTRIBUTING.md",
+      "docs/contributor/*"
+    ]
+  },
+  {
+    "name": "telemetry-manager",
+    "collection": "developer",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/telemetry-manager.git",
+    "include_files": [
+      "CONTRIBUTING.md",
+      "docs/contributor/*"
+    ]
+  },
+  {
+    "name": "community",
+    "collection": "developer",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/community.git",
+    "include_files": [
+      "docs/contributing/*",
+      "docs/guidelines/technical-guidelines/*",
+      "concepts/modularization/*"
+    ],
+    "exclude_files": [
+      "*/_sidebar.md",
+      "*/assets/*",
+      "*/README.md"
     ]
   }
 ]
