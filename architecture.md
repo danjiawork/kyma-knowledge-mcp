@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Kyma Knowledge MCP Server bridges AI agents and Kyma documentation. It implements the [Model Context Protocol](https://modelcontextprotocol.io) over stdio, so any MCP-compatible agent can query Kyma knowledge without any cloud credentials or network dependencies at query time.
+Kyma Knowledge MCP Server bridges AI agents and Kyma documentation. It implements the [Model Context Protocol](https://modelcontextprotocol.io) over stdio, so any MCP-compatible agent can query Kyma knowledge without cloud credentials or a running backend service.
 
 The server is intentionally narrow in scope: **Kyma knowledge only**. Kubernetes operations belong in a separate MCP server registered alongside this one.
 

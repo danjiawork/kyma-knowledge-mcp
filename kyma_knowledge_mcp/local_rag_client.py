@@ -42,7 +42,7 @@ class LocalRAGClient:
     is absent (e.g. hand-built test indexes), _FALLBACK_EMBED_MODEL is used.
 
     If index_path is empty, the latest index is auto-downloaded from GitHub
-    Releases on first run and cached in ~/.kyma-companion/. The cache is
+    Releases on first run and cached in ~/.kyma-knowledge-mcp/. The cache is
     refreshed automatically when it is older than _CACHE_MAX_AGE_DAYS.
     """
 
