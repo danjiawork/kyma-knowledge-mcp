@@ -65,3 +65,6 @@ dmypy.json
 # Project specific
 data/
 logs/
+
+# Claude Code — local-only settings (permissions, personal overrides)
+.claude/settings.local.json

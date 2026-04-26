@@ -34,6 +34,7 @@ AI Agent (Claude Code, Cline, Claude Desktop, ...)
 │                      └───────┘                          │
 │                      same on-disk database              │
 │                      fastembed (in-proc)                │
+│                      flashrank reranker (in-proc)       │
 └─────────────────────────────────────────────────────────┘
          ▲
          │  first run: auto-download index (~50 MB)
@@ -106,8 +107,8 @@ Keeping the two collections separate prevents user docs and contributor docs fro
 kyma_knowledge_mcp/
 ├── main.py              — entry point, logging setup, asyncio runner
 ├── server.py            — MCP tool registry, request routing, response formatting
-├── local_rag_client.py  — ChromaDB + fastembed: index auto-download, cache, vector search
-├── config.py            — Pydantic settings (LOCAL_INDEX_PATH, log level, …)
+├── local_rag_client.py  — ChromaDB + fastembed + flashrank: index auto-download, cache, two-stage query pipeline
+├── config.py            — Pydantic settings (LOCAL_INDEX_PATH, DEFAULT_TOP_K, RERANKER_MODEL, …)
 ├── build_index.py       — CLI entry point: kyma-knowledge-mcp-build-index
 └── indexing/
     ├── fetcher.py       — clone GitHub repos, filter & copy markdown files
@@ -125,9 +126,10 @@ call_tool("get_troubleshooting_guide", {component: "api-gateway", issue: "503"})
 handle_get_troubleshooting_guide()
     │  builds query: "api-gateway troubleshooting 503 error common issues"
     ▼  local_rag_client.py
-LocalRAGClient.search_documents(query=..., top_k=5)
+LocalRAGClient.search_documents(query=..., top_k=8)
     │  fastembed: query → vector (in-process, no HTTP)
-    │  ChromaDB: cosine similarity search
+    │  ChromaDB: cosine similarity → fetch top_k × fetch_multiplier candidates
+    │  flashrank: cross-encoder re-scores candidates → trim to top_k
     ▼
 SearchResponse → formatted markdown → TextContent[]
 ```

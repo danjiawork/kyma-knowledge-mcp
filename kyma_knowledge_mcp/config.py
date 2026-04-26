@@ -17,6 +17,18 @@ class Settings(BaseSettings):
     local_collection_name: str = "kyma_docs"
     local_dev_collection_name: str = "kyma_docs_developer"
 
+    # Default number of results returned by user-facing search tools.
+    # Tools that expose top_k use this as their fallback when the caller omits it.
+    default_top_k: int = 10
+
+    # Reranker — cross-encoder model used to re-score vector-search candidates.
+    # Enabled by default with a lightweight TinyBERT model (~30 MB, Apache 2.0).
+    # Set to empty string to disable. Alternative: "ms-marco-MiniLM-L-12-v2" (higher
+    # quality, ~130 MB, ~4-5× slower).
+    reranker_model: str = "ms-marco-TinyBERT-L-2-v2"
+    # Candidates fetched per final result: fetch_n = top_k × multiplier
+    reranker_fetch_multiplier: int = 3
+
     # Logging
     log_level: str = "INFO"
 

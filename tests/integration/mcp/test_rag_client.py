@@ -67,3 +67,26 @@ async def test_rag_client_empty_result_for_unrelated_query(mini_index: str) -> N
     # top_k=1, but result should still come back (chromadb always returns n_results)
     response = await client.search_documents("quantum physics", top_k=1)
     assert response.count == 1  # ChromaDB returns closest match regardless
+
+
+async def test_rag_client_with_reranker(mini_index: str) -> None:
+    client = LocalRAGClient(
+        index_path=mini_index,
+        collection_name="kyma_docs",
+        reranker_model="ms-marco-TinyBERT-L-2-v2",
+        fetch_multiplier=3,
+    )
+    response = await client.search_documents("APIRule routing rules", top_k=2)
+    assert response.count == 2
+    assert any("APIRule" in doc.content for doc in response.documents)
+
+
+async def test_rag_client_reranker_respects_top_k(mini_index: str) -> None:
+    client = LocalRAGClient(
+        index_path=mini_index,
+        collection_name="kyma_docs",
+        reranker_model="ms-marco-TinyBERT-L-2-v2",
+        fetch_multiplier=3,
+    )
+    response = await client.search_documents("Kyma eventing NATS cloud events", top_k=1)
+    assert response.count == 1

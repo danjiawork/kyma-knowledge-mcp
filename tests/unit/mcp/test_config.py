@@ -10,6 +10,9 @@ def test_defaults(monkeypatch) -> None:
     assert s.server_name == "kyma-knowledge-mcp"
     assert s.server_version == "0.1.0"
     assert s.local_collection_name == "kyma_docs"
+    assert s.reranker_model == "ms-marco-TinyBERT-L-2-v2"
+    assert s.reranker_fetch_multiplier == 3
+    assert s.default_top_k == 10
 
 
 def test_local_index_path_override(monkeypatch) -> None:

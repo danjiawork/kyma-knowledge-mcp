@@ -56,7 +56,7 @@ async def test_search_kyma_docs_default_top_k() -> None:
     with patch("kyma_knowledge_mcp.server.rag_client") as mock_rag:
         mock_rag.search_documents = AsyncMock(return_value=_empty_response())
         await handle_search_kyma_docs({"query": "test"})
-        mock_rag.search_documents.assert_called_once_with(query="test", top_k=5)
+        mock_rag.search_documents.assert_called_once_with(query="test", top_k=10)
 
 
 async def test_get_component_docs_builds_query() -> None:
@@ -121,3 +121,34 @@ async def test_get_contribution_guide_not_indexed() -> None:
     with patch("kyma_knowledge_mcp.server.rag_client_dev", mock_dev):
         result = await handle_get_contribution_guide({"component": "serverless"})
     assert "not yet indexed" in result[0].text
+
+
+async def test_search_kyma_docs_top_k_passed_through() -> None:
+    with patch("kyma_knowledge_mcp.server.rag_client") as mock_rag:
+        mock_rag.search_documents = AsyncMock(return_value=_empty_response())
+        await handle_search_kyma_docs({"query": "test", "top_k": 3})
+        mock_rag.search_documents.assert_called_once_with(query="test", top_k=3)
+
+
+async def test_get_component_docs_default_top_k() -> None:
+    with patch("kyma_knowledge_mcp.server.rag_client") as mock_rag:
+        mock_rag.search_documents = AsyncMock(return_value=_empty_response())
+        await handle_get_component_docs({"component": "api-gateway"})
+        call_kwargs = mock_rag.search_documents.call_args.kwargs
+        assert call_kwargs["top_k"] == 10
+
+
+async def test_explain_kyma_concept_uses_fixed_top_k() -> None:
+    with patch("kyma_knowledge_mcp.server.rag_client") as mock_rag:
+        mock_rag.search_documents = AsyncMock(return_value=_empty_response())
+        await handle_explain_kyma_concept({"concept": "Kyma modules"})
+        call_kwargs = mock_rag.search_documents.call_args.kwargs
+        assert call_kwargs["top_k"] == 5
+
+
+async def test_get_troubleshooting_guide_uses_fixed_top_k() -> None:
+    with patch("kyma_knowledge_mcp.server.rag_client") as mock_rag:
+        mock_rag.search_documents = AsyncMock(return_value=_empty_response())
+        await handle_get_troubleshooting_guide({"component": "eventing"})
+        call_kwargs = mock_rag.search_documents.call_args.kwargs
+        assert call_kwargs["top_k"] == 8
