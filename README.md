@@ -53,13 +53,13 @@ Once registered, describe what you need in natural language — the agent picks 
 | What you say | Tool invoked |
 | --- | --- |
 | _"How do I configure APIRule with OAuth2?"_ | `search_kyma_docs` |
-| _"Show me the eventing-manager documentation"_ | `get_component_docs` |
-| _"What are Kyma modules?"_ | `explain_kyma_concept` |
-| _"api-gateway keeps crashing, help me debug"_ | `get_troubleshooting_guide` |
-| _"How do I contribute to telemetry-manager?"_ | `get_contribution_guide` |
+| _"Show me the eventing-manager documentation"_ | `search_kyma_docs` |
+| _"What are Kyma modules?"_ | `search_kyma_docs` |
+| _"api-gateway keeps crashing, help me debug"_ | `search_kyma_docs` |
+| _"How do I contribute to telemetry-manager?"_ | `search_kyma_contributor_docs` |
 | _"What is the testing strategy for api-gateway?"_ | `search_kyma_contributor_docs` |
 
-The first four tools search **user-facing documentation** (how to deploy, configure, and operate Kyma). The last two search **contributor documentation** (architecture decisions, development setup, testing guides, contribution workflows).
+`search_kyma_docs` searches **user-facing documentation** (how to deploy, configure, and operate Kyma). `search_kyma_contributor_docs` searches **contributor documentation** (architecture decisions, development setup, testing guides, contribution workflows).
 
 ---
 

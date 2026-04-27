@@ -4,10 +4,6 @@ from unittest.mock import AsyncMock, patch
 
 from kyma_knowledge_mcp.local_rag_client import DocumentResult, SearchResponse
 from kyma_knowledge_mcp.server import (
-    handle_explain_kyma_concept,
-    handle_get_component_docs,
-    handle_get_contribution_guide,
-    handle_get_troubleshooting_guide,
     handle_search_kyma_contributor_docs,
     handle_search_kyma_docs,
     list_tools,
@@ -26,17 +22,10 @@ def _empty_response() -> SearchResponse:
     return SearchResponse(query="test", documents=[], count=0)
 
 
-async def test_list_tools_returns_six_tools() -> None:
+async def test_list_tools_returns_two_tools() -> None:
     tools = await list_tools()
     names = {t.name for t in tools}
-    assert names == {
-        "search_kyma_docs",
-        "get_component_docs",
-        "explain_kyma_concept",
-        "get_troubleshooting_guide",
-        "search_kyma_contributor_docs",
-        "get_contribution_guide",
-    }
+    assert names == {"search_kyma_docs", "search_kyma_contributor_docs"}
 
 
 async def test_all_tools_have_required_schema_fields() -> None:
@@ -59,32 +48,11 @@ async def test_search_kyma_docs_default_top_k() -> None:
         mock_rag.search_documents.assert_called_once_with(query="test", top_k=10)
 
 
-async def test_get_component_docs_builds_query() -> None:
-    with patch("kyma_knowledge_mcp.server.rag_client") as mock_rag:
-        mock_rag.search_documents = AsyncMock(return_value=_make_response())
-        await handle_get_component_docs({"component": "api-gateway"})
-        assert "api-gateway" in mock_rag.search_documents.call_args.kwargs["query"]
-
-
-async def test_explain_kyma_concept_not_found() -> None:
+async def test_search_kyma_docs_top_k_passed_through() -> None:
     with patch("kyma_knowledge_mcp.server.rag_client") as mock_rag:
         mock_rag.search_documents = AsyncMock(return_value=_empty_response())
-        result = await handle_explain_kyma_concept({"concept": "unknown"})
-        assert "No documentation found" in result[0].text
-
-
-async def test_get_troubleshooting_guide_with_issue() -> None:
-    with patch("kyma_knowledge_mcp.server.rag_client") as mock_rag:
-        mock_rag.search_documents = AsyncMock(return_value=_make_response())
-        await handle_get_troubleshooting_guide({"component": "api-gateway", "issue": "503 error"})
-        assert "503 error" in mock_rag.search_documents.call_args.kwargs["query"]
-
-
-async def test_get_troubleshooting_guide_no_results() -> None:
-    with patch("kyma_knowledge_mcp.server.rag_client") as mock_rag:
-        mock_rag.search_documents = AsyncMock(return_value=_empty_response())
-        result = await handle_get_troubleshooting_guide({"component": "eventing"})
-        assert "No troubleshooting guides found" in result[0].text
+        await handle_search_kyma_docs({"query": "test", "top_k": 3})
+        mock_rag.search_documents.assert_called_once_with(query="test", top_k=3)
 
 
 async def test_search_kyma_contributor_docs_returns_results() -> None:
@@ -106,49 +74,10 @@ async def test_search_kyma_contributor_docs_not_indexed() -> None:
     assert "not yet indexed" in result[0].text
 
 
-async def test_get_contribution_guide_returns_results() -> None:
+async def test_search_kyma_contributor_docs_default_top_k() -> None:
     mock_dev = AsyncMock()
     mock_dev._available = True
-    mock_dev.search_documents = AsyncMock(return_value=_make_response("guide content"))
+    mock_dev.search_documents = AsyncMock(return_value=_empty_response())
     with patch("kyma_knowledge_mcp.server.rag_client_dev", mock_dev):
-        result = await handle_get_contribution_guide({"component": "api-gateway"})
-    assert "guide content" in result[0].text
-
-
-async def test_get_contribution_guide_not_indexed() -> None:
-    mock_dev = AsyncMock()
-    mock_dev._available = False
-    with patch("kyma_knowledge_mcp.server.rag_client_dev", mock_dev):
-        result = await handle_get_contribution_guide({"component": "serverless"})
-    assert "not yet indexed" in result[0].text
-
-
-async def test_search_kyma_docs_top_k_passed_through() -> None:
-    with patch("kyma_knowledge_mcp.server.rag_client") as mock_rag:
-        mock_rag.search_documents = AsyncMock(return_value=_empty_response())
-        await handle_search_kyma_docs({"query": "test", "top_k": 3})
-        mock_rag.search_documents.assert_called_once_with(query="test", top_k=3)
-
-
-async def test_get_component_docs_default_top_k() -> None:
-    with patch("kyma_knowledge_mcp.server.rag_client") as mock_rag:
-        mock_rag.search_documents = AsyncMock(return_value=_empty_response())
-        await handle_get_component_docs({"component": "api-gateway"})
-        call_kwargs = mock_rag.search_documents.call_args.kwargs
-        assert call_kwargs["top_k"] == 10
-
-
-async def test_explain_kyma_concept_uses_fixed_top_k() -> None:
-    with patch("kyma_knowledge_mcp.server.rag_client") as mock_rag:
-        mock_rag.search_documents = AsyncMock(return_value=_empty_response())
-        await handle_explain_kyma_concept({"concept": "Kyma modules"})
-        call_kwargs = mock_rag.search_documents.call_args.kwargs
-        assert call_kwargs["top_k"] == 5
-
-
-async def test_get_troubleshooting_guide_uses_fixed_top_k() -> None:
-    with patch("kyma_knowledge_mcp.server.rag_client") as mock_rag:
-        mock_rag.search_documents = AsyncMock(return_value=_empty_response())
-        await handle_get_troubleshooting_guide({"component": "eventing"})
-        call_kwargs = mock_rag.search_documents.call_args.kwargs
-        assert call_kwargs["top_k"] == 8
+        await handle_search_kyma_contributor_docs({"query": "test"})
+        mock_dev.search_documents.assert_called_once_with(query="test", top_k=10)

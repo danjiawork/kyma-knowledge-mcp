@@ -175,13 +175,70 @@ Then print a one-line summary:
 
 ## Step 6 — Flag additional issues found during triage
 
-After the tables, call out any problems with **existing** (already-in-main) entries that were modified by the drift fix. Common issues to flag:
+After the tables, call out any problems with **existing** (already-in-main) entries. Two categories:
 
+### 6a — Issues in entries modified by drift fix
 - **BROAD user entry**: `include_files` contains `docs/*` when `docs/user/` exists — user entry will ingest developer content
 - **Misclassified directory**: A directory that is developer-facing (e.g. `guidelines/`, `contributing/`) was added to the user collection by the drift fix
 - **Dead patterns not cleaned up**: Any `DEAD` pattern still present after the fix
 
-Format as:
+### 6b — Audit ALL existing non-kyma-project entries (run every triage)
+
+Identify every existing entry whose `url` does not contain `kyma-project`. For each one:
+
+1. **Broad pattern check**: if `include_files` contains any pattern matching `docs/*`, `*`, or `tutorials/*` without a Kyma-specific qualifier, flag as **BROAD-NON-KYMA** — these are the highest-risk entries because `fnmatch` treats `*` as matching `/`, so `docs/*` recursively matches the entire `docs/` tree.
+
+2. **Path-level Kyma relevance AND quality check**: apply the following tiers in order.
+
+   **Tier 1 — Fast KEEP** (skip content check): path is `docs/user/*` on a `kyma-project` repo. These are standard, low-risk patterns — the `docs/user/` convention is used consistently across Kyma modules for user-facing content.
+
+   **Tier 2 — Content check required** — applies to all of:
+   - Any path on a **non-kyma-project** repo (regardless of whether "kyma" appears in the name)
+   - Developer/contributor collection paths (`docs/contributor/*`, `docs/adr/*`, etc.) on ANY repo
+   - Non-standard patterns on kyma-project repos (e.g. `docs/*` without `/user/`, `tutorials/*`, root `.md` files)
+
+   **For non-kyma-project repos or repos without `docs/user/`**: don't try to guess which subdirectory glob to include. Instead, search the repo for Kyma-specific files first, then build targeted `*kyma*` patterns per subdirectory:
+
+   ```bash
+   # Step 1: list all subdirectories of docs/ and check which contain kyma-named files
+   gh api repos/<org>/<repo>/contents/docs --jq '[.[] | select(.type=="dir") | .name]'
+
+   # Step 2: for each subdirectory, find files with "kyma" in the filename
+   gh api repos/<org>/<repo>/contents/docs/<subdir> \
+     --jq '[.[] | select(.name | ascii_downcase | contains("kyma")) | .name]'
+   ```
+
+   If a subdirectory has kyma-named files, add `docs/<subdir>/*kyma*` to `include_files`. This pattern uses fnmatch (where `*` matches any character including `/`), so it recursively selects any path under that subdirectory whose full path contains "kyma" — while the fetcher's `filter_file_types: ["md"]` already excludes images and other non-.md assets.
+
+   Note: the fetcher always filters out non-.md files regardless of include patterns, so you do NOT need to add `*.md` suffixes to patterns or explicitly exclude asset directories.
+
+   For Tier 2 contributor content, also evaluate on **two dimensions** after finding the files:
+
+   ```bash
+   # Step 1: list files in the directory
+   gh api repos/<org>/<repo>/contents/<path> | jq -r '.[].name'
+   # Step 2: fetch content of the first 1-2 .md files
+   gh api repos/<org>/<repo>/contents/<path>/<file> | jq -r '.content' | base64 -d | head -40
+   ```
+
+   **Dimension A — Kyma relevance** (is it about Kyma?):
+   - Relevant: discusses Kyma runtime, Kyma modules, Kyma-specific resources (APIRule, Kyma CR, Kyma Functions, SAP BTP Kyma Environment)
+   - Not relevant: covers only generic BTP, CF, ABAP, HANA, or Fiori topics with no Kyma-specific guidance
+
+   **Dimension B — User/developer value vs internal infrastructure** (even if Kyma-related):
+   - Valuable: contribution guides, API docs, module configuration reference, architecture decisions (ADRs), tutorials
+   - ⚠️ Internal infrastructure noise — **exclude even if Kyma-related**: hyperscaler account pool rules, region/machine/zone configuration tables, internal routing configs, platform team operational runbooks. These use region/hyperscaler terminology that semantically matches user questions but describe internal platform behavior — RAG will surface them as false authoritative answers.
+   - When a specific file within an otherwise-good directory is infrastructure noise, add it to `exclude_files` rather than removing the entire directory from `include_files`. For directories with many bad files, switch to explicit per-file include patterns instead of `*` globs.
+
+3. **Output a path-level table** for each non-kyma-project repo:
+
+| Path pattern | Verdict | Reason |
+|---|---|---|
+| `tutorials/cp-kyma-*` | ✅ KEEP | "kyma" in path name |
+| `tutorials/remote-service-configure-connectivity/*` | ❌ DROP | Generic BTP connectivity, no Kyma content |
+| `docs/*` | ⚠️ BROAD-NON-KYMA | Matches entire doc tree — needs specific Kyma paths |
+
+Format per-repo issues as:
 > ⚠️ **Issue — `<repo>`**: `<field>` = `<value>` — `<why it's a problem>` · Suggested fix: `<fix>`
 
 ## Step 7 — Ask for confirmation
