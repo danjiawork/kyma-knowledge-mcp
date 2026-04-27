@@ -265,9 +265,27 @@ Then edit `kyma_knowledge_mcp/indexing/docs_sources.json`:
 - Fix misclassified directories (move developer-only paths from user to developer entries)
 - For repos needing both user + developer entries, ensure both are present
 
+### Blocklist update — permanent drops only
+
+After removing DROP entries, decide whether each drop is **permanent** or **temporary**:
+
+**Permanent drop** — repo is definitively not Kyma-relevant (internal tooling, CI infra, unrelated project):
+→ Add the repo name to `_BLOCKLIST_SUBSTRINGS` in `scripts/check_missing_sources.py` so it is never re-discovered by the auto-discovery script.
+
+```python
+_BLOCKLIST_SUBSTRINGS = [
+    ...
+    "eventing-publisher-proxy",  # internal proxy, not user-configurable
+    "compass-manager",           # internal control plane component
+]
+```
+
+**Temporary drop** — repo exists but docs are a stub or the project is in early stage:
+→ Only remove from `docs_sources.json`. Do NOT add to the blocklist. The CI will re-discover it on the next run, and the triage skill will re-run stub detection — if docs have matured since the last drop, it can be kept then.
+
 Commit and push:
 ```bash
-git add kyma_knowledge_mcp/indexing/docs_sources.json
+git add kyma_knowledge_mcp/indexing/docs_sources.json scripts/check_missing_sources.py
 git commit -m "chore: triage auto-discovered doc sources — keep user-facing, remove internal tooling"
 git push
 ```
@@ -276,7 +294,8 @@ git push
 
 - Default collection is `"user"` — only add the `collection` field when it's `"developer"`
 - Never add internal tooling: CI/CD infra, templates, dev toolboxes, GitHub Actions, link checkers
-- Stub repos (docs/user/ or docs/contributor/ contains only README + sidebar) produce zero indexed content — drop them; they can be re-added when docs are written
+- Stub repos (docs/user/ or docs/contributor/ contains only README + sidebar) produce zero indexed content — drop them temporarily; they can be re-added when docs are written
 - REVIEW items block the apply step — resolve them first
 - Evaluate user and developer entries independently: a repo can have a KEEP developer entry and a STUB DROP user entry (or vice versa)
 - The `check_missing_sources.py` blocklist already filters the most obvious cases; this skill handles the remainder
+- **Permanent drops go to the blocklist; temporary drops (stubs, early-stage) do not** — this ensures stub repos are re-evaluated automatically as they mature
