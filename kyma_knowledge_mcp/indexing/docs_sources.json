@@ -322,30 +322,6 @@
     ]
   },
   {
-    "name": "rt-bootstrapper",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/rt-bootstrapper.git",
-    "include_files": [
-      "README.md",
-      "docs/*"
-    ],
-    "exclude_files": [
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "test-infra",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/test-infra.git",
-    "include_files": [
-      "README.md",
-      "docs/*"
-    ],
-    "exclude_files": [
-      "*/_sidebar.md"
-    ]
-  },
-  {
     "name": "kyma-environment-broker",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/kyma-environment-broker.git",
@@ -354,30 +330,6 @@
     ],
     "exclude_files": [
       "docs/user/README.md",
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "runtime-watcher",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/runtime-watcher.git",
-    "include_files": [
-      "README.md",
-      "docs/*"
-    ],
-    "exclude_files": [
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "template-operator",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/template-operator.git",
-    "include_files": [
-      "README.md",
-      "docs/*"
-    ],
-    "exclude_files": [
       "*/_sidebar.md"
     ]
   },
@@ -418,42 +370,6 @@
     ]
   },
   {
-    "name": "price-calculator",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/price-calculator.git",
-    "include_files": [
-      "README.md",
-      "docs/*"
-    ],
-    "exclude_files": [
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "manager-toolkit",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/manager-toolkit.git",
-    "include_files": [
-      "docs/user/*"
-    ],
-    "exclude_files": [
-      "docs/user/README.md",
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "compliancy",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/compliancy.git",
-    "include_files": [
-      "README.md",
-      "docs/*"
-    ],
-    "exclude_files": [
-      "*/_sidebar.md"
-    ]
-  },
-  {
     "name": "eventing-publisher-proxy",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/eventing-publisher-proxy.git",
@@ -490,42 +406,6 @@
     ]
   },
   {
-    "name": "dev-toolbox",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/dev-toolbox.git",
-    "include_files": [
-      "docs/user/*"
-    ],
-    "exclude_files": [
-      "docs/user/README.md",
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "registry-proxy",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/registry-proxy.git",
-    "include_files": [
-      "docs/user/*"
-    ],
-    "exclude_files": [
-      "docs/user/README.md",
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "gpu",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/gpu.git",
-    "include_files": [
-      "docs/user/*"
-    ],
-    "exclude_files": [
-      "docs/user/README.md",
-      "*/_sidebar.md"
-    ]
-  },
-  {
     "name": "auditlog-manager",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/auditlog-manager.git",
@@ -534,54 +414,6 @@
     ],
     "exclude_files": [
       "docs/user/README.md",
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "md-check-link",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/md-check-link.git",
-    "include_files": [
-      "docs/user/*"
-    ],
-    "exclude_files": [
-      "docs/user/README.md",
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "gpu-driver",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/gpu-driver.git",
-    "include_files": [
-      "docs/user/*"
-    ],
-    "exclude_files": [
-      "docs/user/README.md",
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "template-repository",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/template-repository.git",
-    "include_files": [
-      "docs/user/*"
-    ],
-    "exclude_files": [
-      "docs/user/README.md",
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "networking-dev-tools",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/networking-dev-tools.git",
-    "include_files": [
-      "README.md",
-      "docs/*"
-    ],
-    "exclude_files": [
       "*/_sidebar.md"
     ]
   },
@@ -598,57 +430,9 @@
     ]
   },
   {
-    "name": "ip-auth",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/ip-auth.git",
-    "include_files": [
-      "docs/user/*"
-    ],
-    "exclude_files": [
-      "docs/user/README.md",
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "security-test",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/security-test.git",
-    "include_files": [
-      "docs/user/*"
-    ],
-    "exclude_files": [
-      "docs/user/README.md",
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "qa-toolkit",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/qa-toolkit.git",
-    "include_files": [
-      "docs/user/*"
-    ],
-    "exclude_files": [
-      "docs/user/README.md",
-      "*/_sidebar.md"
-    ]
-  },
-  {
     "name": "interactive-tutorials",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/interactive-tutorials.git",
-    "include_files": [
-      "README.md",
-      "docs/*"
-    ],
-    "exclude_files": [
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "wait-for-commit-status-action",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/wait-for-commit-status-action.git",
     "include_files": [
       "README.md",
       "docs/*"
