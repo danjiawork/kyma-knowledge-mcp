@@ -296,5 +296,149 @@
       "*/assets/*",
       "*/README.md"
     ]
+  },
+  {
+    "name": "auditlog-manager",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/auditlog-manager.git",
+    "include_files": [
+      "docs/user/*"
+    ],
+    "exclude_files": [
+      "docs/user/README.md",
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "modulectl",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/modulectl.git",
+    "include_files": [
+      "docs/user/*"
+    ],
+    "exclude_files": [
+      "docs/user/README.md",
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "kyma-environment-broker",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/kyma-environment-broker.git",
+    "include_files": [
+      "docs/user/*"
+    ],
+    "exclude_files": [
+      "docs/user/README.md",
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "compass-manager",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/compass-manager.git",
+    "include_files": [
+      "README.md",
+      "docs/*"
+    ],
+    "exclude_files": [
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "registry-cache",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/registry-cache.git",
+    "include_files": [
+      "docs/user/*"
+    ],
+    "exclude_files": [
+      "docs/user/README.md",
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "kyma-companion",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/kyma-companion.git",
+    "include_files": [
+      "README.md",
+      "docs/*"
+    ],
+    "exclude_files": [
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "cli",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/cli.git",
+    "include_files": [
+      "docs/user/*"
+    ],
+    "exclude_files": [
+      "docs/user/README.md",
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "eventing-publisher-proxy",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/eventing-publisher-proxy.git",
+    "include_files": [
+      "docs/user/*"
+    ],
+    "exclude_files": [
+      "docs/user/README.md",
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "community-modules",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/community-modules.git",
+    "include_files": [
+      "docs/user/*"
+    ],
+    "exclude_files": [
+      "docs/user/README.md",
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "kyma-infrastructure-manager",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/kyma-infrastructure-manager.git",
+    "include_files": [
+      "docs/user/*"
+    ],
+    "exclude_files": [
+      "docs/user/README.md",
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "ans-manager",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/ans-manager.git",
+    "include_files": [
+      "docs/user/*"
+    ],
+    "exclude_files": [
+      "docs/user/README.md",
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "interactive-tutorials",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/interactive-tutorials.git",
+    "include_files": [
+      "README.md",
+      "docs/*"
+    ],
+    "exclude_files": [
+      "*/_sidebar.md"
+    ]
   }
 ]
