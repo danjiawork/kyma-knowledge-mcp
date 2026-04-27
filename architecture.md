@@ -16,13 +16,11 @@ AI Agent (Claude Code, Cline, Claude Desktop, ...)
 ┌─────────────────────────────────────────────────────────┐
 │                  kyma-knowledge-mcp                     │
 │                                                         │
-│  User tools                  Developer tools            │
+│  User tool                   Developer tool             │
 │  ─────────────────           ───────────────────────    │
-│  search_kyma_docs            search_kyma_contributor_   │
-│  get_component_docs    ───►  docs                       │
-│  explain_kyma_concept        get_contribution_guide     │
-│  get_troubleshooting_        │                          │
-│  guide               │       │                          │
+│  search_kyma_docs      ───►  search_kyma_contributor_   │
+│                              docs                       │
+│                        │       │                        │
 │                      ▼       ▼                          │
 │              LocalRAGClient  LocalRAGClient             │
 │              (user)          (developer)                │
@@ -77,29 +75,23 @@ Sources are tagged with `"collection": "user"` or `"collection": "developer"` in
 
 At MCP server startup, `LocalRAGClient` checks `~/.kyma-knowledge-mcp/index/`. If absent or stale (> 8 days), it auto-downloads and extracts the latest release archive. The embedding model name is recorded in `meta.json` inside the archive so that query-time embedding always matches build-time embedding. The developer `LocalRAGClient` starts gracefully even if the `kyma_docs_developer` collection is absent (e.g. on older cached indexes), returning an informative message instead of crashing.
 
-## Why six tools instead of one
+## Why two tools instead of one
 
-All six tools call `LocalRAGClient.search_documents()`. The reason to keep them separate is **agent ergonomics**: descriptive tool names and targeted descriptions help the agent choose the right tool without explicit instruction.
+Both tools call `LocalRAGClient.search_documents()`. The reason to keep them separate is **collection isolation**: user docs and contributor docs are stored in different ChromaDB collections so they never compete for top-k slots in the same query.
 
-The tools are split into two groups, each backed by a separate ChromaDB collection:
+**User tool** — queries `kyma_docs` (user-facing documentation):
 
-**User tools** — query `kyma_docs` (user-facing documentation):
+| Tool                  | Usage                                                    |
+|-----------------------|----------------------------------------------------------|
+| `search_kyma_docs`    | Any question about using, configuring, or operating Kyma |
 
-| Tool | Query pattern |
-|---|---|
-| `search_kyma_docs` | raw user query |
-| `get_component_docs` | `{component} component documentation overview configuration` |
-| `explain_kyma_concept` | `What is {concept} in Kyma? Explain {concept}` |
-| `get_troubleshooting_guide` | `{component} troubleshooting {issue} error common issues` |
+**Developer tool** — queries `kyma_docs_developer` (contributor documentation):
 
-**Developer tools** — query `kyma_docs_developer` (contributor documentation):
+| Tool                           | Usage                                                                        |
+|--------------------------------|------------------------------------------------------------------------------|
+| `search_kyma_contributor_docs` | Questions specifically about developing, extending, or contributing to Kyma  |
 
-| Tool | Query pattern |
-|---|---|
-| `search_kyma_contributor_docs` | raw developer query |
-| `get_contribution_guide` | `{component} contribution guide development setup architecture testing` |
-
-Keeping the two collections separate prevents user docs and contributor docs from competing for top-k slots in the same query.
+Two tools with clear descriptions are enough for agents to route correctly. Wrapper tools that pre-format queries (`get_component_docs`, `explain_kyma_concept`, etc.) added decision overhead without improving retrieval quality.
 
 ## Module responsibilities
 
@@ -120,13 +112,12 @@ kyma_knowledge_mcp/
 ## Request flow
 
 ```
-call_tool("get_troubleshooting_guide", {component: "api-gateway", issue: "503"})
+call_tool("search_kyma_docs", {query: "api-gateway 503 error", top_k: 10})
     │
     ▼  server.py
-handle_get_troubleshooting_guide()
-    │  builds query: "api-gateway troubleshooting 503 error common issues"
+handle_search_kyma_docs()
     ▼  local_rag_client.py
-LocalRAGClient.search_documents(query=..., top_k=8)
+LocalRAGClient.search_documents(query=..., top_k=10)
     │  fastembed: query → vector (in-process, no HTTP)
     │  ChromaDB: cosine similarity → fetch top_k × fetch_multiplier candidates
     │  flashrank: cross-encoder re-scores candidates → trim to top_k
