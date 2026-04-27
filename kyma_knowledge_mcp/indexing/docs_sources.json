@@ -405,8 +405,7 @@
     "include_files": [
       "docs/contributing/*",
       "concepts/modularization/*",
-      "docs/guidelines/technical-guidelines/*",
-      "docs/guidelines/content-guidelines/*"
+      "docs/guidelines/*"
     ],
     "exclude_files": [
       "*/_sidebar.md",
@@ -548,6 +547,132 @@
     "url": "https://github.com/kyma-project/kyma-infrastructure-manager.git",
     "include_files": [
       "docs/adr/*",
+      "docs/contributor/*"
+    ]
+  },
+  {
+    "name": "eventing-publisher-proxy",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/eventing-publisher-proxy.git",
+    "include_files": [
+      "docs/user/*"
+    ],
+    "exclude_files": [
+      "docs/user/README.md",
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "eventing-publisher-proxy",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/eventing-publisher-proxy.git",
+    "collection": "developer",
+    "include_files": [
+      "docs/contributor/*"
+    ]
+  },
+  {
+    "name": "auditlog-manager",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/auditlog-manager.git",
+    "include_files": [
+      "docs/user/*"
+    ],
+    "exclude_files": [
+      "docs/user/README.md",
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "auditlog-manager",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/auditlog-manager.git",
+    "collection": "developer",
+    "include_files": [
+      "docs/contributor/*"
+    ]
+  },
+  {
+    "name": "registry-cache",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/registry-cache.git",
+    "include_files": [
+      "docs/user/*"
+    ],
+    "exclude_files": [
+      "docs/user/README.md",
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "registry-cache",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/registry-cache.git",
+    "collection": "developer",
+    "include_files": [
+      "docs/contributor/*"
+    ]
+  },
+  {
+    "name": "gpu",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/gpu.git",
+    "include_files": [
+      "docs/user/*"
+    ],
+    "exclude_files": [
+      "docs/user/README.md",
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "gpu",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/gpu.git",
+    "collection": "developer",
+    "include_files": [
+      "docs/contributor/*"
+    ]
+  },
+  {
+    "name": "ans-manager",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/ans-manager.git",
+    "include_files": [
+      "docs/user/*"
+    ],
+    "exclude_files": [
+      "docs/user/README.md",
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "ans-manager",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/ans-manager.git",
+    "collection": "developer",
+    "include_files": [
+      "docs/contributor/*"
+    ]
+  },
+  {
+    "name": "ip-auth",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/ip-auth.git",
+    "include_files": [
+      "docs/user/*"
+    ],
+    "exclude_files": [
+      "docs/user/README.md",
+      "*/_sidebar.md"
+    ]
+  },
+  {
+    "name": "ip-auth",
+    "source_type": "Github",
+    "url": "https://github.com/kyma-project/ip-auth.git",
+    "collection": "developer",
+    "include_files": [
       "docs/contributor/*"
     ]
   }
