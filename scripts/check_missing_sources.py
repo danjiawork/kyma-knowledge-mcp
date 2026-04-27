@@ -42,6 +42,47 @@ _SKIP_SUBDIRS = {
     "img",
     "figures",
     "contributor",
+    "operator",  # platform-operator/admin guides, not end-user docs
+    "agents",  # AI-agent coding guides, developer-facing
+    "adr",  # Architecture Decision Records, developer-facing
+    "internal",  # internal architecture/design docs
+    "contributing",  # contribution process docs, developer-facing
+    "governance",  # project governance, not product docs
+    "guidelines",  # development guidelines, developer-facing
+    "loadtest",  # load-testing tooling, developer-facing
+}
+
+# Developer-facing subdirectory names under docs/ that belong in the developer
+# collection.  These are skipped in user discovery but picked up when building
+# developer entries — so content like architecture decisions, AI-agent guides,
+# and contribution how-tos is captured rather than silently dropped.
+_DEVELOPER_SUBDIRS = {
+    "contributor",  # contribution guides (canonical path)
+    "contributing",  # alternate naming for contribution guides
+    "agents",  # AI-agent coding guides
+    "adr",  # Architecture Decision Records
+    "guidelines",  # development guidelines
+    "internal",  # internal architecture/design docs
+}
+
+# Root-level .md files that are governance/meta and not user documentation.
+_SKIP_ROOT_FILES = {
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    "NOTICE.md",
+    "SECURITY.md",
+    "CODEOWNERS.md",
+}
+
+# Loose .md files directly under a doc root that are not user documentation
+# (navigation scaffolding, changelogs, framework config, governance).
+_SKIP_DOC_LOOSE_FILES = {
+    "index.md",
+    "release-notes.md",
+    "vitepress-structure.md",
+    "support-contribution.md",
+    "emeritus.md",
+    "_sidebar.md",
 }
 
 
@@ -94,7 +135,11 @@ def has_user_docs(md_files: list[str]) -> str | None:
     if any(f.startswith("docs/user/") for f in md_files):
         return "docs/user"
     if any(f.startswith("docs/") for f in md_files):
-        return "docs"
+        # Only report as having docs if there are user-facing subdirs after
+        # skipping contributor/governance/internal dirs.  Repos whose docs/
+        # content is entirely under skipped paths produce no useful content.
+        if _doc_subdirs(md_files, "docs"):
+            return "docs"
     if any(f.startswith("tutorials/") for f in md_files):
         return "tutorials"
     return None
@@ -143,9 +188,14 @@ def build_source_entries(
         # For docs/ or tutorials/: subdirectory-level globs instead of docs/*
         include: list[str] = []
 
-        # Root-level .md files (e.g. README.md, glossary.md)
+        # Root-level .md files — skip governance/meta files
         root_mds = [
-            f for f in md_files if "/" not in f and f.endswith(".md") and not f.startswith("_")
+            f
+            for f in md_files
+            if "/" not in f
+            and f.endswith(".md")
+            and not f.startswith("_")
+            and f not in _SKIP_ROOT_FILES
         ]
         include.extend(root_mds)
 
@@ -158,7 +208,11 @@ def build_source_entries(
         for f in md_files:
             if f.startswith(prefix):
                 tail = f[len(prefix) :]
-                if "/" not in tail and not tail.startswith("_"):
+                if (
+                    "/" not in tail
+                    and not tail.startswith("_")
+                    and tail not in _SKIP_DOC_LOOSE_FILES
+                ):
                     include.append(f)
 
         user_entry = dict(base)
@@ -168,11 +222,14 @@ def build_source_entries(
 
     entries = [user_entry]
 
-    # --- developer entry (when docs/contributor/ exists) ---
-    if any(f.startswith("docs/contributor/") for f in md_files):
+    # --- developer entry (when any developer-facing subdir exists) ---
+    dev_subdirs = sorted(
+        sub for sub in _DEVELOPER_SUBDIRS if any(f.startswith(f"docs/{sub}/") for f in md_files)
+    )
+    if dev_subdirs:
         dev_entry = dict(base)
         dev_entry["collection"] = "developer"
-        dev_entry["include_files"] = ["docs/contributor/*"]
+        dev_entry["include_files"] = [f"docs/{sub}/*" for sub in dev_subdirs]
         entries.append(dev_entry)
 
     return entries
@@ -222,8 +279,12 @@ def main() -> None:
             if doc_path:
                 subdirs = _doc_subdirs(md_files, doc_path)
                 subdirs_str = ", ".join(subdirs[:5]) + ("..." if len(subdirs) > 5 else "")
-                has_contributor = any(f.startswith("docs/contributor/") for f in md_files)
-                dev_flag = "  [+developer]" if has_contributor else ""
+                dev_subdirs = sorted(
+                    sub
+                    for sub in _DEVELOPER_SUBDIRS
+                    if any(f.startswith(f"docs/{sub}/") for f in md_files)
+                )
+                dev_flag = f"  [+developer: {', '.join(dev_subdirs)}]" if dev_subdirs else ""
                 print(f"  MISSING  {name:40s}  {doc_path}/  [{subdirs_str}]{dev_flag}")
                 missing.append(
                     {
