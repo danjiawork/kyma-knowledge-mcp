@@ -202,6 +202,19 @@ class LocalFileIndexer:
 
         docs = _load_markdown_files(self.docs_path)
         chunks = list(self._add_titles(docs))
+
+        seen: set[str] = set()
+        deduped: list[Document] = []
+        for chunk in chunks:
+            if chunk.page_content not in seen:
+                seen.add(chunk.page_content)
+                deduped.append(chunk)
+        if len(deduped) < len(chunks):
+            logger.warning(
+                f"Removed {len(chunks) - len(deduped)} duplicate chunks before indexing."
+            )
+        chunks = deduped
+
         logger.info(f"Prepared {len(chunks)} chunks for indexing.")
 
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)
