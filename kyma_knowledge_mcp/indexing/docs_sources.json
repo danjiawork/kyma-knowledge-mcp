@@ -280,7 +280,7 @@
   },
   {
     "name": "lifecycle-manager",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/lifecycle-manager.git",
     "include_files": [
@@ -290,7 +290,7 @@
   },
   {
     "name": "api-gateway",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/api-gateway.git",
     "include_files": [
@@ -300,7 +300,7 @@
   },
   {
     "name": "serverless",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/serverless.git",
     "include_files": [
@@ -310,7 +310,7 @@
   },
   {
     "name": "eventing-manager",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/eventing-manager.git",
     "include_files": [
@@ -320,7 +320,7 @@
   },
   {
     "name": "telemetry-manager",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/telemetry-manager.git",
     "include_files": [
@@ -330,7 +330,7 @@
   },
   {
     "name": "community",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/community.git",
     "include_files": [
@@ -347,7 +347,7 @@
   },
   {
     "name": "registry-proxy",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/registry-proxy.git",
     "include_files": [
@@ -356,7 +356,7 @@
   },
   {
     "name": "nats-manager",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/nats-manager.git",
     "include_files": [
@@ -365,7 +365,7 @@
   },
   {
     "name": "istio",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/istio.git",
     "include_files": [
@@ -374,7 +374,7 @@
   },
   {
     "name": "warden",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/warden.git",
     "include_files": [
@@ -383,7 +383,7 @@
   },
   {
     "name": "cloud-manager",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/cloud-manager.git",
     "include_files": [
@@ -393,7 +393,7 @@
   },
   {
     "name": "btp-manager",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/btp-manager.git",
     "include_files": [
@@ -402,7 +402,7 @@
   },
   {
     "name": "application-connector-manager",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/application-connector-manager.git",
     "include_files": [
@@ -411,7 +411,7 @@
   },
   {
     "name": "docker-registry",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/docker-registry.git",
     "include_files": [
@@ -420,7 +420,7 @@
   },
   {
     "name": "keda-manager",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/keda-manager.git",
     "include_files": [
@@ -429,7 +429,7 @@
   },
   {
     "name": "busola",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/busola.git",
     "include_files": [
@@ -438,7 +438,7 @@
   },
   {
     "name": "modulectl",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/modulectl.git",
     "include_files": [
@@ -447,7 +447,7 @@
   },
   {
     "name": "kyma-environment-broker",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/kyma-environment-broker.git",
     "include_files": [
@@ -464,7 +464,7 @@
   },
   {
     "name": "cli",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/cli.git",
     "include_files": [
@@ -473,7 +473,7 @@
   },
   {
     "name": "community-modules",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/community-modules.git",
     "include_files": [
@@ -482,7 +482,7 @@
   },
   {
     "name": "kyma-infrastructure-manager",
-    "collection": "developer",
+    "collection": "contributor",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/kyma-infrastructure-manager.git",
     "include_files": [

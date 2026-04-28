@@ -43,20 +43,20 @@ _SKIP_SUBDIRS = {
     "figures",
     "contributor",
     "operator",  # platform-operator/admin guides, not end-user docs
-    "agents",  # AI-agent coding guides, developer-facing
-    "adr",  # Architecture Decision Records, developer-facing
+    "agents",  # AI-agent coding guides, contributor-facing
+    "adr",  # Architecture Decision Records, contributor-facing
     "internal",  # internal architecture/design docs
-    "contributing",  # contribution process docs, developer-facing
+    "contributing",  # contribution process docs, contributor-facing
     "governance",  # project governance, not product docs
-    "guidelines",  # development guidelines, developer-facing
-    "loadtest",  # load-testing tooling, developer-facing
+    "guidelines",  # development guidelines, contributor-facing
+    "loadtest",  # load-testing tooling, contributor-facing
 }
 
-# Developer-facing subdirectory names under docs/ that belong in the developer
+# Contributor-facing subdirectory names under docs/ that belong in the contributor
 # collection.  These are skipped in user discovery but picked up when building
-# developer entries — so content like architecture decisions, AI-agent guides,
+# contributor entries — so content like architecture decisions, AI-agent guides,
 # and contribution how-tos is captured rather than silently dropped.
-_DEVELOPER_SUBDIRS = {
+_CONTRIBUTOR_SUBDIRS = {
     "contributor",  # contribution guides (canonical path)
     "contributing",  # alternate naming for contribution guides
     "agents",  # AI-agent coding guides
@@ -222,13 +222,13 @@ def build_source_entries(
 
     entries = [user_entry]
 
-    # --- developer entry (when any developer-facing subdir exists) ---
+    # --- contributor entry (when any contributor-facing subdir exists) ---
     dev_subdirs = sorted(
-        sub for sub in _DEVELOPER_SUBDIRS if any(f.startswith(f"docs/{sub}/") for f in md_files)
+        sub for sub in _CONTRIBUTOR_SUBDIRS if any(f.startswith(f"docs/{sub}/") for f in md_files)
     )
     if dev_subdirs:
         dev_entry = dict(base)
-        dev_entry["collection"] = "developer"
+        dev_entry["collection"] = "contributor"
         dev_entry["include_files"] = [f"docs/{sub}/*" for sub in dev_subdirs]
         entries.append(dev_entry)
 
@@ -281,10 +281,10 @@ def main() -> None:
                 subdirs_str = ", ".join(subdirs[:5]) + ("..." if len(subdirs) > 5 else "")
                 dev_subdirs = sorted(
                     sub
-                    for sub in _DEVELOPER_SUBDIRS
+                    for sub in _CONTRIBUTOR_SUBDIRS
                     if any(f.startswith(f"docs/{sub}/") for f in md_files)
                 )
-                dev_flag = f"  [+developer: {', '.join(dev_subdirs)}]" if dev_subdirs else ""
+                dev_flag = f"  [+contributor: {', '.join(dev_subdirs)}]" if dev_subdirs else ""
                 print(f"  MISSING  {name:40s}  {doc_path}/  [{subdirs_str}]{dev_flag}")
                 missing.append(
                     {

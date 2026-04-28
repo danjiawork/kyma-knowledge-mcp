@@ -16,18 +16,18 @@ AI Agent (Claude Code, Cline, Claude Desktop, ...)
 ┌─────────────────────────────────────────────────────────┐
 │                  kyma-knowledge-mcp                     │
 │                                                         │
-│  User tool                   Developer tool             │
+│  User tool                   Contributor tool             │
 │  ─────────────────           ───────────────────────    │
 │  search_kyma_docs      ───►  search_kyma_contributor_   │
 │                              docs                       │
 │                        │       │                        │
 │                      ▼       ▼                          │
 │              LocalRAGClient  LocalRAGClient             │
-│              (user)          (developer)                │
+│              (user)          (contributor)              │
 │                      │       │                          │
 │                      ▼       ▼                          │
 │        ChromaDB collection  ChromaDB collection         │
-│        "kyma_docs"          "kyma_docs_developer"       │
+│        "kyma_docs"          "kyma_docs_contributor"     │
 │        (user-facing docs)   (contributor docs)          │
 │                      └───────┘                          │
 │                      same on-disk database              │
@@ -42,7 +42,7 @@ AI Agent (Claude Code, Cline, Claude Desktop, ...)
     (kyma-docs-index.tar.gz)
 ```
 
-There is no remote RAG backend. All embedding and vector search runs locally inside the server process. The two collections share one ChromaDB database on disk but are queried independently, so user and developer content never compete for top-k slots.
+There is no remote RAG backend. All embedding and vector search runs locally inside the server process. The two collections share one ChromaDB database on disk but are queried independently, so user and contributor content never compete for top-k slots.
 
 ## Index lifecycle
 
@@ -57,23 +57,23 @@ GitHub repos                    CI / developer machine
 DocumentsFetcher                     │   (collection: "user" in docs_sources.json)
 (fetcher.py)                         │   clone repos → ./data/user/
      │                               │
-     │                               │  Step 1b: fetch developer sources
-     │                               │   (collection: "developer" in docs_sources.json)
-     │                               │   clone repos → ./data/developer/
+     │                               │  Step 1b: fetch contributor sources
+     │                               │   (collection: "contributor" in docs_sources.json)
+     │                               │   clone repos → ./data/contributor/
      │                               │
      ▼                               │  Step 2a: index user docs
 LocalFileIndexer                     │   chunk → embed → ChromaDB "kyma_docs"
 (indexer.py)                         │
-     │                               │  Step 2b: index developer docs
-     │                               │   chunk → embed → ChromaDB "kyma_docs_developer"
+     │                               │  Step 2b: index contributor docs
+     │                               │   chunk → embed → ChromaDB "kyma_docs_contributor"
      ▼                               ▼
 ChromaDB dir  ──► tar.gz ──► GitHub Release (docs-index-latest)
 (both collections in same dir)
 ```
 
-Sources are tagged with `"collection": "user"` or `"collection": "developer"` in `docs_sources.json`. Entries without a tag default to `"user"`.
+Sources are tagged with `"collection": "user"` or `"collection": "contributor"` in `docs_sources.json`. Entries without a tag default to `"user"`.
 
-At MCP server startup, `LocalRAGClient` checks `~/.kyma-knowledge-mcp/index/`. If absent or stale (> 8 days), it auto-downloads and extracts the latest release archive. The embedding model name is recorded in `meta.json` inside the archive so that query-time embedding always matches build-time embedding. The developer `LocalRAGClient` starts gracefully even if the `kyma_docs_developer` collection is absent (e.g. on older cached indexes), returning an informative message instead of crashing.
+At MCP server startup, `LocalRAGClient` checks `~/.kyma-knowledge-mcp/index/`. If absent or stale (> 8 days), it auto-downloads and extracts the latest release archive. The embedding model name is recorded in `meta.json` inside the archive so that query-time embedding always matches build-time embedding. The contributor `LocalRAGClient` starts gracefully even if the `kyma_docs_contributor` collection is absent (e.g. on older cached indexes), returning an informative message instead of crashing.
 
 ## Why two tools instead of one
 
@@ -85,7 +85,7 @@ Both tools call `LocalRAGClient.search_documents()`. The reason to keep them sep
 |-----------------------|----------------------------------------------------------|
 | `search_kyma_docs`    | Any question about using, configuring, or operating Kyma |
 
-**Developer tool** — queries `kyma_docs_developer` (contributor documentation):
+**Contributor tool** — queries `kyma_docs_contributor` (contributor documentation):
 
 | Tool                           | Usage                                                                        |
 |--------------------------------|------------------------------------------------------------------------------|
