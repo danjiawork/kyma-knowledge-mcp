@@ -77,7 +77,7 @@ jobs:
             echo "**Review the diff**, then use \`/triage-kyma-doc-sources\` to:"
             echo "- Remove internal tooling repos"
             echo "- Adjust \`include_files\` patterns"
-            echo "- Confirm correct \`collection\` (user/developer)"
+            echo "- Confirm correct \`collection\` (user/contributor)"
             echo ""
             if echo "$DRIFT" | grep -qE "NEW_PATH|DEAD|MISSING_DEV"; then
               echo "## Drift findings (auto-applied)"

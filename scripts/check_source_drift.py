@@ -4,7 +4,7 @@ For each tracked repo, checks:
   NEW_PATH    — doc directories present in the repo but not covered by
                 include_files
   DEAD        — include_files patterns that match no files in the repo
-  MISSING_DEV — repos with developer-facing docs but no developer entry
+  MISSING_DEV — repos with contributor-facing docs but no contributor entry
 
 Usage:
     uv run python scripts/check_source_drift.py
@@ -28,15 +28,15 @@ SOURCES_DEFAULT = Path(__file__).parent.parent / "kyma_knowledge_mcp/indexing/do
 DOC_ROOTS = ["docs", "tutorials"]
 
 # Second-level subdirectory names skipped when checking USER collection drift.
-# These are developer-facing paths — they should not be reported as NEW_PATH
-# for user entries (they belong in the developer collection instead).
+# These are contributor-facing paths — they should not be reported as NEW_PATH
+# for user entries (they belong in the contributor collection instead).
 _SKIP_USER_SUBDIRS = {
     "contributor",
     "contributing",
-    "agents",  # AI-agent coding guides, developer-facing
-    "adr",  # Architecture Decision Records, developer-facing
+    "agents",  # AI-agent coding guides, contributor-facing
+    "adr",  # Architecture Decision Records, contributor-facing
     "internal",  # internal architecture/design docs
-    "guidelines",  # development guidelines, developer-facing
+    "guidelines",  # development guidelines, contributor-facing
     "release-notes",
     "release_notes",
     "assets",
@@ -45,13 +45,13 @@ _SKIP_USER_SUBDIRS = {
     "figures",
     "operator",  # platform-operator/admin guides, not end-user docs
     "governance",  # project governance, not product docs
-    "loadtest",  # load-testing tooling, developer-facing
+    "loadtest",  # load-testing tooling, contributor-facing
 }
 
-# Second-level subdirectory names skipped when checking DEVELOPER collection
-# drift.  Only non-content directories are listed here — developer-facing
+# Second-level subdirectory names skipped when checking CONTRIBUTOR collection
+# drift.  Only non-content directories are listed here — contributor-facing
 # paths (agents, adr, etc.) are intentionally absent so that uncovered
-# developer content is reported as NEW_PATH.
+# contributor content is reported as NEW_PATH.
 _SKIP_DEV_SUBDIRS = {
     "release-notes",
     "release_notes",
@@ -64,9 +64,9 @@ _SKIP_DEV_SUBDIRS = {
     "operator",
 }
 
-# Developer-facing subdirectory names.  MISSING_DEV fires when any of these
-# exist in a repo but no developer collection entry covers them.
-_DEVELOPER_SUBDIRS = {
+# Contributor-facing subdirectory names.  MISSING_DEV fires when any of these
+# exist in a repo but no contributor collection entry covers them.
+_CONTRIBUTOR_SUBDIRS = {
     "contributor",
     "contributing",
     "agents",
@@ -138,7 +138,7 @@ def _uncovered_dirs(
     collection: str,
 ) -> set[str]:
     """Summarise uncovered files as directory paths, skipping irrelevant dirs."""
-    skip = _SKIP_DEV_SUBDIRS if collection == "developer" else _SKIP_USER_SUBDIRS
+    skip = _SKIP_DEV_SUBDIRS if collection == "contributor" else _SKIP_USER_SUBDIRS
     dirs: set[str] = set()
     for f in uncovered:
         parts = f.split("/")
@@ -156,12 +156,12 @@ def check_source(source: dict, all_md_files: list[str]) -> dict:
     include_files = source.get("include_files")
     collection = source.get("collection", "user")
 
-    if collection == "developer":
-        # Scope candidate files to developer-facing directories only.
+    if collection == "contributor":
+        # Scope candidate files to contributor-facing directories only.
         candidate_files = [
             f
             for f in all_md_files
-            if any(f.startswith(f"docs/{sub}/") for sub in _DEVELOPER_SUBDIRS)
+            if any(f.startswith(f"docs/{sub}/") for sub in _CONTRIBUTOR_SUBDIRS)
         ]
     else:
         doc_roots = infer_doc_roots(include_files)
@@ -177,9 +177,11 @@ def check_source(source: dict, all_md_files: list[str]) -> dict:
         ]
 
     dev_subdirs_found = sorted(
-        sub for sub in _DEVELOPER_SUBDIRS if any(f.startswith(f"docs/{sub}/") for f in all_md_files)
+        sub
+        for sub in _CONTRIBUTOR_SUBDIRS
+        if any(f.startswith(f"docs/{sub}/") for f in all_md_files)
     )
-    missing_dev = bool(dev_subdirs_found) and collection != "developer"
+    missing_dev = bool(dev_subdirs_found) and collection != "contributor"
 
     broad_patterns: list[str] = []
     if include_files and any(f.startswith("docs/user/") for f in all_md_files):
@@ -209,7 +211,7 @@ def _deduplicate_patterns(patterns: list[str]) -> list[str]:
     return result
 
 
-def apply_fixes(source: dict, findings: dict, new_developer_entries: list[dict]) -> dict:
+def apply_fixes(source: dict, findings: dict, new_contributor_entries: list[dict]) -> dict:
     """Return updated source entry with drift fixes applied."""
     updated = dict(source)
     include_files = list(source.get("include_files") or [])
@@ -236,19 +238,19 @@ def apply_fixes(source: dict, findings: dict, new_developer_entries: list[dict])
         if p in include_files:
             include_files.remove(p)
 
-    # Create a developer entry covering all found developer subdirs,
+    # Create a contributor entry covering all found contributor subdirs,
     # and strip those paths from the user entry to avoid noise.
     if findings["missing_dev"]:
         dev_subdirs = findings.get("dev_subdirs", ["contributor"])
         include_files = [
             p for p in include_files if not any(p.startswith(f"docs/{sub}/") for sub in dev_subdirs)
         ]
-        new_developer_entries.append(
+        new_contributor_entries.append(
             {
                 "name": source["name"],
                 "source_type": source["source_type"],
                 "url": source["url"],
-                "collection": "developer",
+                "collection": "contributor",
                 "include_files": [f"docs/{sub}/*" for sub in dev_subdirs],
             }
         )
@@ -271,7 +273,7 @@ def _format_findings(findings: dict) -> list[str]:
     if findings["missing_dev"]:
         dev_paths = ", ".join(f"docs/{s}/*" for s in findings.get("dev_subdirs", ["contributor"]))
         lines.append(
-            f"    MISSING_DEV  developer content ({dev_paths}) — no developer collection entry"
+            f"    MISSING_DEV  contributor content ({dev_paths}) — no contributor collection entry"
         )
     return lines
 
@@ -280,7 +282,7 @@ def _process_source(
     source: dict,
     existing_dev_names: set[str],
     auto_fix: bool,
-    new_developer_entries: list[dict],
+    new_contributor_entries: list[dict],
 ) -> tuple[dict, list[str]]:
     """Fetch remote md files, check drift, and optionally apply fixes.
 
@@ -304,7 +306,7 @@ def _process_source(
 
     lines = _format_findings(findings)
     if auto_fix and lines:
-        return apply_fixes(source, findings, new_developer_entries), lines
+        return apply_fixes(source, findings, new_contributor_entries), lines
     return source, lines
 
 
@@ -334,15 +336,15 @@ def main() -> None:
             print(f"ERROR: repo '{args.repo}' not found in sources")
             sys.exit(1)
 
-    existing_dev_names = {s["name"] for s in sources if s.get("collection") == "developer"}
+    existing_dev_names = {s["name"] for s in sources if s.get("collection") == "contributor"}
 
     found_any = False
-    new_developer_entries: list[dict] = []
+    new_contributor_entries: list[dict] = []
     updated_sources = []
 
     for source in sources:
         updated, lines = _process_source(
-            source, existing_dev_names, args.auto_fix, new_developer_entries
+            source, existing_dev_names, args.auto_fix, new_contributor_entries
         )
         updated_sources.append(updated)
         if lines:
@@ -356,9 +358,9 @@ def main() -> None:
         return
 
     if args.auto_fix:
-        all_sources = updated_sources + new_developer_entries
+        all_sources = updated_sources + new_contributor_entries
         sources_path.write_text(json.dumps(all_sources, indent=2) + "\n", encoding="utf-8")
-        print(f"\nAuto-fixed. {len(new_developer_entries)} new developer entries added.")
+        print(f"\nAuto-fixed. {len(new_contributor_entries)} new contributor entries added.")
         print("Review the changes with /triage-kyma-doc-sources before merging.")
     else:
         print("\nRe-run with --auto-fix to apply these fixes to docs_sources.json.")

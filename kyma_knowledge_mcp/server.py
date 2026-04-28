@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 _DEFAULT_TOP_K = settings.default_top_k
 
 rag_client: LocalRAGClient | None = None
-rag_client_dev: LocalRAGClient | None = None
+rag_client_contributor: LocalRAGClient | None = None
 _init_lock = asyncio.Lock()
 
 # Create MCP server instance
@@ -41,22 +41,22 @@ async def _get_rag() -> LocalRAGClient:
     return rag_client
 
 
-async def _get_dev_rag() -> LocalRAGClient:
-    global rag_client_dev
-    if rag_client_dev is not None:
-        return rag_client_dev
+async def _get_contributor_rag() -> LocalRAGClient:
+    global rag_client_contributor
+    if rag_client_contributor is not None:
+        return rag_client_contributor
     async with _init_lock:
-        if rag_client_dev is None:
-            logger.info("Initializing developer RAG client on first use...")
-            rag_client_dev = await asyncio.to_thread(
+        if rag_client_contributor is None:
+            logger.info("Initializing contributor RAG client on first use...")
+            rag_client_contributor = await asyncio.to_thread(
                 LocalRAGClient,
                 settings.local_index_path,
                 settings.local_embed_model_override,
-                settings.local_dev_collection_name,
+                settings.local_contributor_collection_name,
                 settings.reranker_model,
                 settings.reranker_fetch_multiplier,
             )
-    return rag_client_dev
+    return rag_client_contributor
 
 
 @app.list_tools()
@@ -95,7 +95,7 @@ async def list_tools() -> list[Tool]:
         Tool(
             name="search_kyma_contributor_docs",
             description=(
-                "Search Kyma contributor and developer documentation. Use only when the "
+                "Search Kyma contributor documentation. Use only when the "
                 "question is specifically about developing, extending, or contributing to "
                 "Kyma itself — such as development environment setup, running tests, "
                 "architecture decisions (ADRs), PR process, or coding conventions for a "
@@ -161,9 +161,9 @@ async def handle_search_kyma_docs(arguments: dict[str, Any]) -> list[TextContent
     return [TextContent(type="text", text=result_text)]
 
 
-_DEV_NOT_INDEXED = (
-    "Developer documentation not yet indexed. "
-    "Rebuild the index after adding developer sources to docs_sources.json."
+_CONTRIBUTOR_NOT_INDEXED = (
+    "Contributor documentation not yet indexed. "
+    "Rebuild the index after adding contributor sources to docs_sources.json."
 )
 
 
@@ -174,11 +174,11 @@ async def handle_search_kyma_contributor_docs(arguments: dict[str, Any]) -> list
 
     logger.info(f"Searching contributor docs: query='{query}', top_k={top_k}")
 
-    dev_rag = await _get_dev_rag()
-    if not dev_rag._available:
-        return [TextContent(type="text", text=_DEV_NOT_INDEXED)]
+    contributor_rag = await _get_contributor_rag()
+    if not contributor_rag._available:
+        return [TextContent(type="text", text=_CONTRIBUTOR_NOT_INDEXED)]
 
-    response = await dev_rag.search_documents(query=query, top_k=top_k)
+    response = await contributor_rag.search_documents(query=query, top_k=top_k)
 
     result_text = f"# Contributor Docs Search: {query}\n\n"
     if response.count == 0:

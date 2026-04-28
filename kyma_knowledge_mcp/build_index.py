@@ -26,9 +26,9 @@ def main() -> None:
         help="Directory for user doc markdown files (default: ./data/user)",
     )
     parser.add_argument(
-        "--dev-data-dir",
-        default="./data/developer",
-        help="Directory for developer doc markdown files (default: ./data/developer)",
+        "--contributor-data-dir",
+        default="./data/contributor",
+        help="Directory for contributor doc markdown files (default: ./data/contributor)",
     )
     parser.add_argument(
         "--tmp-dir",
@@ -73,7 +73,7 @@ def main() -> None:
     from kyma_knowledge_mcp.indexing.fetcher import DocumentsFetcher
     from kyma_knowledge_mcp.indexing.indexer import (
         COLLECTION_NAME,
-        COLLECTION_NAME_DEV,
+        COLLECTION_NAME_CONTRIBUTOR,
         FastEmbedEmbeddings,
         LocalFileIndexer,
     )
@@ -84,7 +84,7 @@ def main() -> None:
 
     all_sources = json.loads(Path(args.sources).read_text())
     user_sources = [s for s in all_sources if s.get("collection", "user") == "user"]
-    dev_sources = [s for s in all_sources if s.get("collection") == "developer"]
+    contributor_sources = [s for s in all_sources if s.get("collection") == "contributor"]
 
     embedding = FastEmbedEmbeddings(args.embed_model)
 
@@ -96,13 +96,13 @@ def main() -> None:
             tmp_dir=args.tmp_dir,
             sources_list=user_sources,
         ).run()
-        if dev_sources:
-            logger.info("Step 1b/2: Fetching developer documents...")
+        if contributor_sources:
+            logger.info("Step 1b/2: Fetching contributor documents...")
             DocumentsFetcher(
                 source_file="",
-                output_dir=args.dev_data_dir,
+                output_dir=args.contributor_data_dir,
                 tmp_dir=args.tmp_dir,
-                sources_list=dev_sources,
+                sources_list=contributor_sources,
             ).run()
     else:
         logger.info("Skipping fetch step.")
@@ -115,13 +115,13 @@ def main() -> None:
         collection_name=COLLECTION_NAME,
     ).index()
 
-    if dev_sources:
-        logger.info("Step 2b/2: Indexing developer documents...")
+    if contributor_sources:
+        logger.info("Step 2b/2: Indexing contributor documents...")
         LocalFileIndexer(
-            docs_path=args.dev_data_dir,
+            docs_path=args.contributor_data_dir,
             embedding=embedding,
             output_dir=args.output_dir,
-            collection_name=COLLECTION_NAME_DEV,
+            collection_name=COLLECTION_NAME_CONTRIBUTOR,
         ).index()
 
     if args.package:

@@ -59,7 +59,7 @@ async def test_search_kyma_contributor_docs_returns_results() -> None:
     mock_dev = AsyncMock()
     mock_dev._available = True
     mock_dev.search_documents = AsyncMock(return_value=_make_response("contrib info"))
-    with patch("kyma_knowledge_mcp.server.rag_client_dev", mock_dev):
+    with patch("kyma_knowledge_mcp.server.rag_client_contributor", mock_dev):
         result = await handle_search_kyma_contributor_docs(
             {"query": "how to contribute", "top_k": 3}
         )
@@ -69,7 +69,7 @@ async def test_search_kyma_contributor_docs_returns_results() -> None:
 async def test_search_kyma_contributor_docs_not_indexed() -> None:
     mock_dev = AsyncMock()
     mock_dev._available = False
-    with patch("kyma_knowledge_mcp.server.rag_client_dev", mock_dev):
+    with patch("kyma_knowledge_mcp.server.rag_client_contributor", mock_dev):
         result = await handle_search_kyma_contributor_docs({"query": "test"})
     assert "not yet indexed" in result[0].text
 
@@ -78,6 +78,6 @@ async def test_search_kyma_contributor_docs_default_top_k() -> None:
     mock_dev = AsyncMock()
     mock_dev._available = True
     mock_dev.search_documents = AsyncMock(return_value=_empty_response())
-    with patch("kyma_knowledge_mcp.server.rag_client_dev", mock_dev):
+    with patch("kyma_knowledge_mcp.server.rag_client_contributor", mock_dev):
         await handle_search_kyma_contributor_docs({"query": "test"})
         mock_dev.search_documents.assert_called_once_with(query="test", top_k=10)

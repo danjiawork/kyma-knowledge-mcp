@@ -127,7 +127,7 @@ See [docs_sources.json](kyma_knowledge_mcp/indexing/docs_sources.json) for the f
 | --- | --- | --- |
 | `--sources` | `kyma_knowledge_mcp/indexing/docs_sources.json` | Path to the sources JSON file |
 | `--data-dir` | `./data/user` | Directory to store fetched user-doc markdown files |
-| `--dev-data-dir` | `./data/developer` | Directory to store fetched contributor markdown files |
+| `--contributor-data-dir` | `./data/contributor` | Directory to store fetched contributor markdown files |
 | `--tmp-dir` | `./tmp` | Temporary directory for git clones |
 | `--output-dir` | `~/.kyma-knowledge-mcp/index` | ChromaDB output directory (both collections written here) |
 | `--embed-model` | `BAAI/bge-small-en-v1.5` | fastembed model name |
