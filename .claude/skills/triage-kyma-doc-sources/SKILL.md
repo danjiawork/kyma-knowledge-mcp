@@ -265,12 +265,12 @@ Then edit `kyma_knowledge_mcp/indexing/docs_sources.json`:
 - Fix misclassified directories (move contributor-only paths from user to contributor entries)
 - For repos needing both user + contributor entries, ensure both are present
 
-### Blocklist update — permanent drops only
+### Exclusion list update — three tiers
 
-After removing DROP entries, decide whether each drop is **permanent** or **temporary**:
+After removing DROP entries, decide the fate of each dropped repo using these three tiers:
 
-**Permanent drop** — repo is definitively not Kyma-relevant (internal tooling, CI infra, unrelated project):
-→ Add the repo name to `_BLOCKLIST_SUBSTRINGS` in `scripts/check_missing_sources.py` so it is never re-discovered by the auto-discovery script.
+**Tier 1 — Permanent drop** — repo is definitively not Kyma-relevant (internal tooling, CI infra, unrelated project):
+→ Add the repo name to `_BLOCKLIST_SUBSTRINGS` in `scripts/check_missing_sources.py` so it is never re-discovered.
 
 ```python
 _BLOCKLIST_SUBSTRINGS = [
@@ -280,12 +280,34 @@ _BLOCKLIST_SUBSTRINGS = [
 ]
 ```
 
-**Temporary drop** — repo exists but docs are a stub or the project is in early stage:
-→ Only remove from `docs_sources.json`. Do NOT add to the blocklist. The CI will re-discover it on the next run, and the triage skill will re-run stub detection — if docs have matured since the last drop, it can be kept then.
+**Tier 2 — Time-bounded exclusion** — repo exists but docs are a stub or the project is in early stage; worth re-checking in ~6 months:
+→ Add to `kyma_knowledge_mcp/indexing/excluded_sources.json` with a `review_after` date 6 months from today. The CI scan will skip it until that date, then re-surface it automatically for triage.
+
+```json
+{
+  "repos": [
+    {
+      "repo": "kyma-project/new-experimental-repo",
+      "reason": "early stage, no indexable content yet",
+      "review_after": "YYYY-MM-DD"
+    }
+  ]
+}
+```
+
+**Tier 3 — Immediate re-check** — repo should be re-evaluated next week (e.g. you're unsure and want a quick follow-up):
+→ Only remove from `docs_sources.json`. Do NOT add to blocklist or excluded_sources.json. CI will re-discover it on the next run.
+
+**Decision guide:**
+- Clearly internal/irrelevant → Tier 1 (blocklist)
+- Good candidate but no content yet / too new → Tier 2 (exclude with review date)
+- Genuinely uncertain → Tier 3 (re-check next run)
 
 Commit and push:
 ```bash
-git add kyma_knowledge_mcp/indexing/docs_sources.json scripts/check_missing_sources.py
+git add kyma_knowledge_mcp/indexing/docs_sources.json \
+        kyma_knowledge_mcp/indexing/excluded_sources.json \
+        scripts/check_missing_sources.py
 git commit -m "chore: triage auto-discovered doc sources — keep user-facing, remove internal tooling"
 git push
 ```
@@ -298,4 +320,4 @@ git push
 - REVIEW items block the apply step — resolve them first
 - Evaluate user and contributor entries independently: a repo can have a KEEP contributor entry and a STUB DROP user entry (or vice versa)
 - The `check_missing_sources.py` blocklist already filters the most obvious cases; this skill handles the remainder
-- **Permanent drops go to the blocklist; temporary drops (stubs, early-stage) do not** — this ensures stub repos are re-evaluated automatically as they mature
+- **Permanent drops go to `_BLOCKLIST_SUBSTRINGS`; time-bounded drops go to `excluded_sources.json` with `review_after`; uncertain drops get no entry (re-checked next run)** — this three-tier system minimises repeated triage work while ensuring stub repos are re-evaluated as they mature

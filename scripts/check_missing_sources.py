@@ -11,10 +11,14 @@ import argparse
 import json
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 
 ORGS = ["kyma-project"]
 SOURCES_DEFAULT = Path(__file__).parent.parent / "kyma_knowledge_mcp/indexing/docs_sources.json"
+EXCLUDED_DEFAULT = (
+    Path(__file__).parent.parent / "kyma_knowledge_mcp/indexing/excluded_sources.json"
+)
 
 # Repos whose names match any of these substrings are skipped: they are
 # internal tooling that would add noise to user-facing search results.
@@ -90,6 +94,25 @@ def _is_internal(repo_name: str) -> bool:
     """Return True if the repo is internal tooling that should be skipped."""
     name = repo_name.lower()
     return any(pat in name for pat in _BLOCKLIST_SUBSTRINGS)
+
+
+def load_excluded(excluded_path: Path) -> list[dict]:
+    """Load excluded_sources.json, returning an empty list if file is missing."""
+    if not excluded_path.exists():
+        return []
+    with open(excluded_path, encoding="utf-8") as f:
+        return json.load(f).get("repos", [])
+
+
+def _is_excluded(repo_name: str, excluded: list[dict]) -> bool:
+    """Return True if repo is in the exclusion list and review_after has not passed."""
+    today = date.today().isoformat()
+    full_name = f"kyma-project/{repo_name}"
+    for entry in excluded:
+        if entry.get("repo") in (repo_name, full_name):
+            review_after = entry.get("review_after")
+            return review_after is None or today < review_after
+    return False
 
 
 def gh(endpoint: str) -> list | dict:
@@ -239,6 +262,7 @@ def main() -> None:
     """Entrypoint."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--sources", default=str(SOURCES_DEFAULT))
+    parser.add_argument("--excluded", default=str(EXCLUDED_DEFAULT))
     parser.add_argument(
         "--auto-add",
         action="store_true",
@@ -257,6 +281,8 @@ def main() -> None:
     with open(sources_path, encoding="utf-8") as f:
         sources = json.load(f)
 
+    excluded = load_excluded(Path(args.excluded))
+
     indexed_urls = {s["url"].rstrip("/").removesuffix(".git") for s in sources}
 
     print(f"Indexed sources: {len(indexed_urls)}\n")
@@ -273,6 +299,8 @@ def main() -> None:
             if repo.get("archived") or repo.get("fork"):
                 continue
             if _is_internal(name):
+                continue
+            if _is_excluded(name, excluded):
                 continue
             md_files = get_repo_md_files(org, name)
             doc_path = has_user_docs(md_files)

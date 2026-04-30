@@ -335,9 +335,15 @@
     "url": "https://github.com/kyma-project/community.git",
     "include_files": [
       "docs/contributing/*",
+      "docs/governance/*",
       "concepts/modularization/*",
+      "concepts/eventing/*",
+      "concepts/eventing-code-guidelines.md",
+      "concepts/observability-strategy/**",
+      "concepts/operator-reconciliation/*",
       "docs/guidelines/technical-guidelines/*",
-      "docs/guidelines/content-guidelines/*"
+      "docs/guidelines/content-guidelines/*",
+      "sigs-and-wgs/**"
     ],
     "exclude_files": [
       "*/_sidebar.md",
