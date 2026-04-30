@@ -1,21 +1,23 @@
 # Kyma Knowledge MCP Server
 
-An MCP server that gives AI agents semantic search access to Kyma documentation — no credentials or backend service required. The index is auto-downloaded on first run and cached locally; subsequent queries run fully offline.
+An MCP server that gives AI agents semantic search access to Kyma documentation - no credentials or backend service required. The index is auto-downloaded on first run and cached locally; subsequent queries run fully offline.
 
 ---
 
 ## Quick start
 
-> **Tip:** The fastest way to install is via [Plugin Marketplace](#plugin-marketplace-recommended) below. Or use `/install-kyma-knowledge-mcp` in Claude Code for a guided setup (Cline, Claude Desktop, and scope changes).
+> **Tip:** The fastest way to install is via [Plugin Marketplace](#plugin-marketplace-recommended) below. For Cline or Claude Desktop, see the sections below.
 
 ### Plugin Marketplace (recommended)
 
-```
-/plugin marketplace add danjiawork/kyma-knowledge-mcp
-/plugin install kyma-knowledge-mcp@kyma-plugins
+**Terminal**:
+
+```bash
+claude plugin marketplace add danjiawork/kyma-knowledge-mcp
+claude plugin install kyma-knowledge-mcp@kyma-plugins
 ```
 
-The MCP server is registered immediately at user scope. Optionally run `/install-kyma-knowledge-mcp` to verify the connection, change to project scope, or see example queries.
+The MCP server is registered immediately at user scope. A skill `/install-kyma-knowledge-mcp` is bundled with the plugin - run it to verify the connection, change scope, or see example queries.
 
 To confirm the server is connected, run `/mcp` inside Claude Code or `claude mcp list` in your terminal.
 

@@ -14,27 +14,22 @@ claude mcp list 2>&1
 
 **If `kyma-knowledge-mcp` appears in the output:**
 
-Check the `claude mcp list` output for the scope label next to `kyma-knowledge-mcp` (shown as `user` or `project`).
+Run the following to get accurate scope information:
+
+```bash
+claude plugin list 2>&1
+```
+
+Check the output for `kyma-knowledge-mcp` and its `Scope` field (`user` or `project`). If it does not appear in `claude plugin list` (i.e. it was registered manually via `claude mcp add`), note that the scope cannot be determined automatically.
 
 Tell the user which scope it is currently at, then offer these options:
 
 - **Keep current scope** — proceed directly to verify the connection
-- **Switch to project scope** (only available in this workspace) — removes and re-adds at project scope
 - **Switch to user scope** (available in all Claude Code sessions) — removes and re-adds at user scope
 
 Wait for their answer:
 
 - If they want to keep current scope or verify only: skip to Step 3 (Warm-up and verify).
-- If they want to switch to project scope: run the following, then skip to Step 3:
-
-  ```bash
-  claude mcp remove kyma-knowledge-mcp
-  claude mcp add kyma-knowledge-mcp \
-    -- uvx --from git+https://github.com/danjiawork/kyma-knowledge-mcp kyma-knowledge-mcp
-  ```
-
-  Tell the user: "Switched to project scope. Verifying connection now."
-
 - If they want to switch to user scope: run the following, then skip to Step 3:
 
   ```bash
