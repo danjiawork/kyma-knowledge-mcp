@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     # Override the embedding model read from meta.json (usually not needed)
     local_embed_model_override: str = ""
     local_collection_name: str = "kyma_docs"
-    local_contributor_collection_name: str = "kyma_docs_contributor"
+    local_contributor_collection_name: str = "kyma_contributor_docs"
 
     # Default number of results returned by user-facing search tools.
     # Tools that expose top_k use this as their fallback when the caller omits it.
