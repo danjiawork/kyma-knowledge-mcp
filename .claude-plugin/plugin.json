@@ -1,0 +1,15 @@
+{
+  "name": "kyma-knowledge-mcp",
+  "description": "Semantic search over Kyma documentation — registers the MCP server immediately at user scope. Run /install-kyma-knowledge-mcp to verify connection, change to project scope, or see example queries.",
+  "mcpServers": {
+    "kyma-knowledge-mcp": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/danjiawork/kyma-knowledge-mcp",
+        "kyma-knowledge-mcp"
+      ]
+    }
+  },
+  "commands": ["./.claude/commands/install-kyma-knowledge-mcp.md"]
+}

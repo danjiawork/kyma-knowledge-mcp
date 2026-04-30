@@ -6,7 +6,18 @@ An MCP server that gives AI agents semantic search access to Kyma documentation 
 
 ## Quick start
 
-> **Tip:** Use the `/install-kyma-knowledge-mcp` skill in Claude Code for a guided setup across different clients (Claude Code, Cline, etc.).
+> **Tip:** The fastest way to install is via [Plugin Marketplace](#plugin-marketplace-recommended) below. Or use `/install-kyma-knowledge-mcp` in Claude Code for a guided setup (Cline, Claude Desktop, and scope changes).
+
+### Plugin Marketplace (recommended)
+
+```
+/plugin marketplace add danjiawork/kyma-knowledge-mcp
+/plugin install kyma-knowledge-mcp@kyma-plugins
+```
+
+The MCP server is registered immediately at user scope. Optionally run `/install-kyma-knowledge-mcp` to verify the connection, change to project scope, or see example queries.
+
+To confirm the server is connected, run `/mcp` inside Claude Code or `claude mcp list` in your terminal.
 
 ### Claude Code
 
@@ -24,7 +35,19 @@ claude mcp add kyma-knowledge-mcp --scope user \
   -- uvx --from git+https://github.com/danjiawork/kyma-knowledge-mcp kyma-knowledge-mcp
 ```
 
-On first run the server auto-downloads the pre-built index (~50 MB) and caches it in `~/.kyma-knowledge-mcp/`. The MCP connection itself is instant; the first search query may take a minute while the index loads, subsequent queries are fast.
+After running, verify the server is registered and connected in one of two ways:
+
+```bash
+claude mcp list          # run from the same project folder for project-level installs
+```
+
+Or inside a Claude Code session, run `/mcp` to view and manage all active MCP servers.
+
+> **Project-level install:** `claude mcp list` and `/mcp` only show the server when you are inside the project folder where you ran `claude mcp add`. If you don't see it, check that your terminal / Claude Code session is opened from that directory.
+
+You should see `kyma-knowledge-mcp` with status **connected**. If it shows as disconnected, start a new Claude Code session, the server connects automatically on the next startup.
+
+> **First query:** On first run the server downloads the Kyma docs index (~60 MB) to `~/.kyma-knowledge-mcp/` and loads the embedding model. This takes **1–3 minutes** and happens once. Subsequent queries in this and all future sessions are fast. Wait for the first response before assuming something is wrong.
 
 ### Cline (VS Code)
 

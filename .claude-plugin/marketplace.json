@@ -1,0 +1,16 @@
+{
+  "name": "kyma-plugins",
+  "owner": {
+    "name": "Dan Jia"
+  },
+  "metadata": {
+    "description": "Kyma Knowledge MCP plugins for Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "kyma-knowledge-mcp",
+      "source": "./",
+      "description": "Semantic search over Kyma documentation — auto-registers the MCP server. Run /install-kyma-knowledge-mcp for guided setup."
+    }
+  ]
+}
