@@ -14,8 +14,8 @@ env:
   EMBED_MODEL: "BAAI/bge-base-en-v1.5"
 
 jobs:
-  build-index:
-    name: Build ChromaDB index and publish to rolling release
+  check-doc-sources:
+    name: Check for new and drifted doc sources, open PR if needed
     runs-on: ubuntu-latest
 
     steps:
@@ -27,18 +27,6 @@ jobs:
 
       - name: Install dependencies
         run: uv sync
-
-      - name: Ensure rolling release exists
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if ! gh release view "${{ env.ROLLING_RELEASE_TAG }}" --repo "${{ github.repository }}" > /dev/null 2>&1; then
-            gh release create "${{ env.ROLLING_RELEASE_TAG }}" \
-              --repo "${{ github.repository }}" \
-              --title "Latest Kyma Docs Index" \
-              --notes "Auto-updated weekly. Contains the latest ChromaDB index of Kyma documentation." \
-              --prerelease
-          fi
 
       - name: Check for new and drifted doc sources, open PR if needed
         env:
@@ -105,6 +93,32 @@ jobs:
             echo "Updated existing PR branch: $BRANCH"
           fi
 
+  build-index:
+    name: Build ChromaDB index and publish to rolling release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Ensure rolling release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! gh release view "${{ env.ROLLING_RELEASE_TAG }}" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            gh release create "${{ env.ROLLING_RELEASE_TAG }}" \
+              --repo "${{ github.repository }}" \
+              --title "Latest Kyma Docs Index" \
+              --notes "Auto-updated weekly. Contains the latest ChromaDB index of Kyma documentation." \
+              --prerelease
+          fi
+
       - name: Fetch and index Kyma documentation
         run: |
           uv run kyma-knowledge-mcp-build-index \
@@ -123,17 +137,19 @@ jobs:
           import chromadb
 
           client = chromadb.PersistentClient(path="./chroma_index")
-          user_count = client.get_collection("kyma_docs").count()
-          contrib_count = client.get_collection("kyma_contributor_docs").count()
+          counts = {c.name: client.get_collection(c.name).count() for c in client.list_collections()}
 
-          print(f"kyma_docs: {user_count} docs")
-          print(f"kyma_contributor_docs: {contrib_count} docs")
+          for name, count in counts.items():
+              print(f"{name}: {count} docs")
+
+          user_count = counts.get("kyma_docs", 0)
+          contrib_count = counts.get("kyma_contributor_docs", 0)
 
           if user_count < 2000:
               print(f"ERROR: kyma_docs too small ({user_count} < 2000) — index build likely failed")
               sys.exit(1)
           if contrib_count < 200:
-              print(f"ERROR: kyma_contributor_docs too small ({contrib_count} < 200) — index build likely failed")
+              print(f"ERROR: contributor collection too small ({contrib_count} < 200) — index build likely failed")
               sys.exit(1)
 
           print("Validation passed.")
