@@ -116,6 +116,29 @@ jobs:
             --package kyma-docs-index.tar.gz \
             --log-level INFO
 
+      - name: Validate index
+        run: |
+          uv run python - <<'EOF'
+          import sys
+          import chromadb
+
+          client = chromadb.PersistentClient(path="./chroma_index")
+          user_count = client.get_collection("kyma_docs").count()
+          contrib_count = client.get_collection("kyma_contributor_docs").count()
+
+          print(f"kyma_docs: {user_count} docs")
+          print(f"kyma_contributor_docs: {contrib_count} docs")
+
+          if user_count < 2000:
+              print(f"ERROR: kyma_docs too small ({user_count} < 2000) — index build likely failed")
+              sys.exit(1)
+          if contrib_count < 200:
+              print(f"ERROR: kyma_contributor_docs too small ({contrib_count} < 200) — index build likely failed")
+              sys.exit(1)
+
+          print("Validation passed.")
+          EOF
+
       - name: Upload index to rolling release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
