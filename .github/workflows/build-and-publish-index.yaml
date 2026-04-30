@@ -143,7 +143,7 @@ jobs:
               print(f"{name}: {count} docs")
 
           user_count = counts.get("kyma_docs", 0)
-          contrib_count = counts.get("kyma_contributor_docs") or counts.get("kyma_docs_contributor") or 0
+          contrib_count = counts.get("kyma_contributor_docs", 0)
 
           if user_count < 2000:
               print(f"ERROR: kyma_docs too small ({user_count} < 2000) — index build likely failed")
