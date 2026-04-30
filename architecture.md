@@ -27,7 +27,7 @@ AI Agent (Claude Code, Cline, Claude Desktop, ...)
 │                      │       │                          │
 │                      ▼       ▼                          │
 │        ChromaDB collection  ChromaDB collection         │
-│        "kyma_docs"          "kyma_docs_contributor"     │
+│        "kyma_docs"          "kyma_contributor_docs"     │
 │        (user-facing docs)   (contributor docs)          │
 │                      └───────┘                          │
 │                      same on-disk database              │
@@ -65,7 +65,7 @@ DocumentsFetcher                     │   (collection: "user" in docs_sources.j
 LocalFileIndexer                     │   chunk → embed → ChromaDB "kyma_docs"
 (indexer.py)                         │
      │                               │  Step 2b: index contributor docs
-     │                               │   chunk → embed → ChromaDB "kyma_docs_contributor"
+     │                               │   chunk → embed → ChromaDB "kyma_contributor_docs"
      ▼                               ▼
 ChromaDB dir  ──► tar.gz ──► GitHub Release (docs-index-latest)
 (both collections in same dir)
@@ -73,7 +73,7 @@ ChromaDB dir  ──► tar.gz ──► GitHub Release (docs-index-latest)
 
 Sources are tagged with `"collection": "user"` or `"collection": "contributor"` in `docs_sources.json`. Entries without a tag default to `"user"`.
 
-At MCP server startup, `LocalRAGClient` checks `~/.kyma-knowledge-mcp/index/`. If absent or stale (> 8 days), it auto-downloads and extracts the latest release archive. The embedding model name is recorded in `meta.json` inside the archive so that query-time embedding always matches build-time embedding. The contributor `LocalRAGClient` starts gracefully even if the `kyma_docs_contributor` collection is absent (e.g. on older cached indexes), returning an informative message instead of crashing.
+At MCP server startup, `LocalRAGClient` checks `~/.kyma-knowledge-mcp/index/`. If absent or stale (> 8 days), it auto-downloads and extracts the latest release archive. The embedding model name is recorded in `meta.json` inside the archive so that query-time embedding always matches build-time embedding. The contributor `LocalRAGClient` starts gracefully even if the `kyma_contributor_docs` collection is absent (e.g. on older cached indexes), returning an informative message instead of crashing.
 
 ## Why two tools instead of one
 
@@ -85,7 +85,7 @@ Both tools call `LocalRAGClient.search_documents()`. The reason to keep them sep
 |-----------------------|----------------------------------------------------------|
 | `search_kyma_docs`    | Any question about using, configuring, or operating Kyma |
 
-**Contributor tool** — queries `kyma_docs_contributor` (contributor documentation):
+**Contributor tool** — queries `kyma_contributor_docs` (contributor documentation):
 
 | Tool                           | Usage                                                                        |
 |--------------------------------|------------------------------------------------------------------------------|
