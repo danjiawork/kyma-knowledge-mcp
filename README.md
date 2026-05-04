@@ -4,6 +4,26 @@ An MCP server that gives AI agents semantic search access to Kyma documentation 
 
 ---
 
+## Prerequisites
+
+This server is distributed as a Python package and launched on demand by **`uvx`** (part of [uv](https://docs.astral.sh/uv/)). If you don't have it yet:
+
+```bash
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Or via Homebrew
+brew install uv
+```
+
+Verify the install:
+
+```bash
+uvx --version
+```
+
+---
+
 ## Quick start
 
 > **Tip:** The fastest way to install is via [Plugin Marketplace](#plugin-marketplace-recommended) below. For Cline or Claude Desktop, see the sections below.
