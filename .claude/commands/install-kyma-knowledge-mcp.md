@@ -14,6 +14,26 @@ claude mcp list 2>&1
 
 **If `kyma-knowledge-mcp` appears in the output:**
 
+First, check that `uvx` is available — this is required to run the server:
+
+```bash
+uvx --version 2>&1
+```
+
+If `uvx` is missing (command not found), tell the user:
+
+> "The MCP server is registered but `uvx` is not installed — this is why the connection failed. Installing `uvx` now..."
+
+Install it:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Then tell the user: "Done. Please open a **new terminal and a new Claude Code session**, then run `/install-kyma-knowledge-mcp` again to complete the setup." Stop here.
+
+If `uvx` is present, continue:
+
 Run the following to get accurate scope information:
 
 ```bash
@@ -147,7 +167,15 @@ Call the `search_kyma_docs` MCP tool with query `"what is Kyma"`.
 Go to Step 4.
 
 **If the tool is not available (not found or connection error) on Claude Code:**
-Tell the user: "The server is registered but this session started before it was added. Please open a new Claude Code session — the server will connect automatically. Run `/install-kyma-knowledge-mcp` again in the new session and I'll complete the verification there."
+
+First, run a quick diagnosis:
+
+```bash
+uvx --version 2>&1
+```
+
+- **If `uvx` is missing:** Tell the user: "The connection failed because `uvx` is not installed — the server cannot start without it. Run `curl -LsSf https://astral.sh/uv/install.sh | sh`, then open a new terminal and a new Claude Code session, and run `/install-kyma-knowledge-mcp` again."
+- **If `uvx` is present:** Tell the user: "The server is registered but this session started before it was connected. Please open a new Claude Code session — the server will connect automatically. Run `/install-kyma-knowledge-mcp` again in the new session and I'll complete the verification there."
 
 **If the warm-up query times out or errors:**
 Go to the Troubleshooting section.
