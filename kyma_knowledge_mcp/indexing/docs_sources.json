@@ -182,9 +182,6 @@
     "include_files": [
       "tutorials/cp-kyma-microservice-trigger/cp-kyma-microservice-trigger.md",
       "tutorials/cp-kyma-mocks/cp-kyma-mocks.md",
-      "tutorials/cp-kyma-frontend-ui5-mssql/cp-kyma-frontend-ui5-mssql.md",
-      "tutorials/cp-kyma-api-mssql-golang/cp-kyma-api-mssql-golang.md",
-      "tutorials/cp-kyma-mssql-deployment/cp-kyma-mssql-deployment.md",
       "tutorials/cp-kyma-download-cli/cp-kyma-download-cli.md",
       "tutorials/cp-kyma-redis-function/cp-kyma-redis-function.md",
       "tutorials/cp-kyma-getting-started/cp-kyma-getting-started.md",
@@ -240,7 +237,8 @@
       "tutorials/private-link-aws/*",
       "tutorials/private-link-microsoft-azure/*",
       "tutorials/private-link-onboarding/*",
-      "tutorials/private-link-service-onboarding-aws/*"
+      "tutorials/private-link-service-onboarding-aws/*",
+      "tutorials/cp-kyma-postgres-cap/*"
     ]
   },
   {
