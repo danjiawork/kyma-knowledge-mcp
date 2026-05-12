@@ -30,7 +30,9 @@ jobs:
 
       - name: Run eval
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GH_MODELS_TOKEN must be a PAT with the 'models' permission scope.
+          # secrets.GITHUB_TOKEN alone does not have that scope.
+          GITHUB_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
         run: |
           uv run python -m tests.eval.run_eval \
             --agent github-models \
