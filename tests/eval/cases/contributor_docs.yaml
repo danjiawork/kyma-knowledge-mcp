@@ -1,0 +1,132 @@
+- id: contrib_01_api_gateway_contribution
+  question: "How can I contribute to the Kyma api-gateway module?"
+  collection: contributor
+  source: joule_inspired
+  expectations:
+    - name: mentions_contribution_process
+      description: "Mentions contribution guidelines, a CONTRIBUTING file, or a pull request process"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+    - name: mentions_local_dev
+      description: "Mentions how to run tests or set up a local development environment for api-gateway"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+
+- id: contrib_02_eventing_architecture
+  question: "What is the internal architecture of the Kyma eventing-manager?"
+  collection: contributor
+  source: joule_inspired
+  expectations:
+    - name: mentions_controllers
+      description: "Mentions controllers, reconcilers, or the operator pattern used in eventing-manager"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+    - name: mentions_nats
+      description: "Mentions NATS or the event backend that eventing-manager manages"
+      threshold: 0.5
+      mandatory: true
+      kind: keyword
+      pattern: "NATS|nats|event backend|EventBackend"
+
+- id: contrib_03_serverless_tests
+  question: "How do I run integration tests for the Kyma serverless module?"
+  collection: contributor
+  source: joule_inspired
+  expectations:
+    - name: mentions_test_command
+      description: "Provides a make command, go test command, or script to run integration tests"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+    - name: mentions_test_env
+      description: "Mentions the required environment (e.g., a running cluster or k3d) for integration tests"
+      threshold: 0.5
+      mandatory: false
+      kind: llm
+
+- id: contrib_04_lifecycle_manager
+  question: "What is the Kyma lifecycle-manager and how does it work?"
+  collection: contributor
+  source: joule_inspired
+  expectations:
+    - name: describes_lifecycle_manager_role
+      description: "Describes lifecycle-manager as the component responsible for managing Kyma module lifecycle"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+    - name: mentions_kyma_cr
+      description: "Mentions the Kyma CR or module CustomResourceDefinitions managed by lifecycle-manager"
+      threshold: 0.5
+      mandatory: false
+      kind: keyword
+      pattern: "Kyma CR|KymaCR|moduletemplate|ModuleTemplate|lifecycle"
+
+- id: contrib_05_create_module
+  question: "How do I create a new Kyma module from scratch?"
+  collection: contributor
+  source: joule_inspired
+  expectations:
+    - name: mentions_module_template
+      description: "Mentions a module template, scaffold, or the kyma-module-template repository"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+    - name: mentions_operator_pattern
+      description: "Mentions the operator pattern or controller-runtime as the basis for a Kyma module"
+      threshold: 0.5
+      mandatory: false
+      kind: llm
+
+- id: contrib_06_telemetry_pipeline_dev
+  question: "How does the Kyma telemetry module handle log pipelines internally?"
+  collection: contributor
+  source: joule_inspired
+  expectations:
+    - name: mentions_logpipeline
+      description: "Mentions LogPipeline CRD or the controller that reconciles log pipeline configuration"
+      threshold: 0.5
+      mandatory: true
+      kind: keyword
+      pattern: "LogPipeline|logpipeline|log pipeline"
+    - name: mentions_fluent_or_otel
+      description: "Mentions Fluent Bit or OTel collector as the underlying pipeline agent"
+      threshold: 0.5
+      mandatory: false
+      kind: keyword
+      pattern: "Fluent Bit|fluent-bit|fluentbit|OTel|otel|OpenTelemetry"
+
+- id: contrib_07_api_gateway_integration_tests
+  question: "How do I run the api-gateway integration tests locally?"
+  collection: contributor
+  source: original
+  expectations:
+    - name: provides_test_command
+      description: "Provides a specific make target or command to run api-gateway integration tests"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+    - name: mentions_cluster_requirement
+      description: "Mentions that a Kubernetes cluster (e.g. k3d or a real cluster) is required"
+      threshold: 0.5
+      mandatory: false
+      kind: llm
+
+- id: contrib_08_pr_process
+  question: "What is the pull request process for contributing to a Kyma module repository?"
+  collection: contributor
+  source: original
+  expectations:
+    - name: mentions_pr_checks
+      description: "Mentions CI checks, review process, or required approvals for merging a PR"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+    - name: mentions_codeowners
+      description: "Mentions CODEOWNERS file or required reviewers"
+      threshold: 0.5
+      mandatory: false
+      kind: keyword
+      pattern: "CODEOWNERS|codeowners|code owner"

@@ -1,0 +1,255 @@
+- id: user_01_what_is_kyma
+  question: "What is Kyma?"
+  collection: user
+  source: joule_inspired
+  expectations:
+    - name: mentions_kubernetes
+      description: "Response mentions Kubernetes or k8s"
+      threshold: 0.5
+      mandatory: true
+      kind: keyword
+      pattern: "Kubernetes|k8s"
+    - name: describes_purpose
+      description: "Explains Kyma as a runtime or extension platform for cloud-native applications"
+      threshold: 0.5
+      mandatory: false
+      kind: llm
+
+- id: user_02_kyma_modules
+  question: "What modules does Kyma offer and what do they do?"
+  collection: user
+  source: joule_inspired
+  expectations:
+    - name: mentions_core_modules
+      description: "Mentions at least two of: eventing, serverless, telemetry, Istio, api-gateway"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+    - name: describes_module_purpose
+      description: "Explains what at least one module is used for"
+      threshold: 0.5
+      mandatory: false
+      kind: llm
+
+- id: user_03_add_module
+  question: "How do I add a Kyma module to my cluster?"
+  collection: user
+  source: joule_inspired
+  expectations:
+    - name: mentions_module_cr
+      description: "Mentions enabling a module via the Kyma custom resource or the Kyma dashboard"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+    - name: mentions_kyma_cr
+      description: "Mentions the Kyma CR or kyma.operator.kyma-project.io"
+      threshold: 0.5
+      mandatory: false
+      kind: keyword
+      pattern: "Kyma CR|kyma\\.operator|KymaCR|spec\\.modules"
+
+- id: user_04_eventing_subscription
+  question: "How can I subscribe to events in Kyma?"
+  collection: user
+  source: joule_inspired
+  expectations:
+    - name: mentions_subscription_cr
+      description: "Mentions the Subscription custom resource"
+      threshold: 0.5
+      mandatory: true
+      kind: keyword
+      pattern: "Subscription|subscription"
+    - name: mentions_event_source
+      description: "Mentions the event source or event type that the Subscription listens to"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+
+- id: user_05_serverless_function
+  question: "How do I create a serverless Function in Kyma?"
+  collection: user
+  source: joule_inspired
+  expectations:
+    - name: mentions_function_cr
+      description: "Mentions the Function custom resource or the serverless module"
+      threshold: 0.5
+      mandatory: true
+      kind: keyword
+      pattern: "Function|serverless"
+    - name: provides_steps_or_yaml
+      description: "Provides a YAML example or steps to define and deploy the Function"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+
+- id: user_06_expose_endpoint
+  question: "How do I expose an HTTP endpoint from my application in Kyma?"
+  collection: user
+  source: joule_inspired
+  expectations:
+    - name: mentions_apirule
+      description: "Mentions APIRule as the mechanism to expose endpoints in Kyma"
+      threshold: 0.5
+      mandatory: true
+      kind: keyword
+      pattern: "APIRule|apirule|api-rule"
+    - name: provides_example
+      description: "Provides an example or describes the spec fields needed"
+      threshold: 0.5
+      mandatory: false
+      kind: llm
+
+- id: user_07_btp_service_binding
+  question: "How do I bind a SAP BTP service to my application running in Kyma?"
+  collection: user
+  source: joule_inspired
+  expectations:
+    - name: mentions_service_resources
+      description: "Mentions ServiceInstance or ServiceBinding resources"
+      threshold: 0.5
+      mandatory: true
+      kind: keyword
+      pattern: "ServiceInstance|ServiceBinding|serviceinstance|servicebinding"
+    - name: mentions_btp_operator
+      description: "Mentions the BTP Operator or btp-manager module"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+
+- id: user_08_telemetry_tracing
+  question: "How do I configure distributed tracing in Kyma using the telemetry module?"
+  collection: user
+  source: joule_inspired
+  expectations:
+    - name: mentions_tracepipeline
+      description: "Mentions TracePipeline custom resource or the telemetry module"
+      threshold: 0.5
+      mandatory: true
+      kind: keyword
+      pattern: "TracePipeline|tracepipeline|telemetry"
+    - name: mentions_otlp
+      description: "Mentions OTLP or OpenTelemetry as the protocol for trace export"
+      threshold: 0.5
+      mandatory: false
+      kind: keyword
+      pattern: "OTLP|otlp|OpenTelemetry|opentelemetry"
+
+- id: user_09_istio_usage
+  question: "How do I use Istio in Kyma for traffic management or mutual TLS?"
+  collection: user
+  source: joule_inspired
+  expectations:
+    - name: mentions_istio_module
+      description: "Mentions the Istio module in Kyma and how to enable it"
+      threshold: 0.5
+      mandatory: true
+      kind: keyword
+      pattern: "Istio|istio|service mesh"
+    - name: describes_use_case
+      description: "Describes at least one Istio use case such as mTLS, traffic management, or sidecar injection"
+      threshold: 0.5
+      mandatory: false
+      kind: llm
+
+- id: user_10_kyma_regions
+  question: "In which cloud regions is Kyma available?"
+  collection: user
+  source: joule_inspired
+  expectations:
+    - name: mentions_regions_or_hyperscalers
+      description: "Mentions specific cloud regions or hyperscalers (AWS, GCP, Azure) where Kyma is available"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+
+- id: user_11_keda_autoscaling
+  question: "How do I set up event-driven autoscaling with KEDA in Kyma?"
+  collection: user
+  source: joule_inspired
+  expectations:
+    - name: mentions_keda
+      description: "Mentions KEDA or the KEDA module in Kyma"
+      threshold: 0.5
+      mandatory: true
+      kind: keyword
+      pattern: "KEDA|keda"
+    - name: mentions_scaledobject
+      description: "Mentions ScaledObject or a trigger source for autoscaling"
+      threshold: 0.5
+      mandatory: false
+      kind: keyword
+      pattern: "ScaledObject|scaledobject|trigger"
+
+- id: user_12_kyma_cli_install
+  question: "How do I install Kyma using the Kyma CLI?"
+  collection: user
+  source: joule_inspired
+  expectations:
+    - name: mentions_kyma_cli
+      description: "Mentions the Kyma CLI tool or kyma deploy command"
+      threshold: 0.5
+      mandatory: true
+      kind: keyword
+      pattern: "kyma deploy|kyma CLI|kyma-cli|Kyma CLI"
+    - name: provides_install_steps
+      description: "Provides steps or commands to install Kyma on a cluster"
+      threshold: 0.5
+      mandatory: false
+      kind: llm
+
+# --- APIRule v2 showcase cases ---
+# Expected: fail under no-tools (LLM gives v1 answers), pass under MCP
+
+- id: apirule_v2_version_check
+  question: "What is the latest version of APIRule in Kyma and what changed from v1?"
+  collection: user
+  source: original
+  expectations:
+    - name: mentions_v2
+      description: "States that the current/latest APIRule version is v2 (apiVersion: gateway.kyma-project.io/v2)"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+    - name: no_accessstrategies
+      description: "Does NOT recommend using the accessStrategies field, or explicitly states it was removed in v2"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+
+- id: apirule_jwt_v2
+  question: "How do I configure JWT authentication for an APIRule in Kyma?"
+  collection: user
+  source: original
+  expectations:
+    - name: uses_v2_apiversion
+      description: "Uses apiVersion: gateway.kyma-project.io/v2 in any YAML example, not v1beta1 or v1"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+    - name: no_accessstrategies_field
+      description: "Does not include accessStrategies field in the configuration (this field does not exist in v2)"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+    - name: mentions_jwt_keywords
+      description: "Mentions JWT issuer, JWKS URI, or token authentication"
+      threshold: 0.5
+      mandatory: false
+      kind: keyword
+      pattern: "jwt|JWT|issuer|jwks|JWKS"
+
+- id: apirule_noauth_v2
+  question: "How do I expose an APIRule endpoint without authentication in Kyma?"
+  collection: user
+  source: original
+  expectations:
+    - name: uses_v2_noauth
+      description: "Shows NoAuth configuration using gateway.kyma-project.io/v2 spec, not accessStrategies: [{handler: noop}]"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+    - name: no_noop_handler
+      description: "Does not suggest the 'noop' handler from v1 APIRule"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
