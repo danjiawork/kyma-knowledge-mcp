@@ -107,7 +107,7 @@ Test cases are YAML files under `cases/`. Each entry has:
 |------|-------|--------|
 | `user_docs.yaml` | ~15 | What is Kyma, modules, eventing, serverless, telemetry, Istio, BTP, KEDA, regions, hyperscalers, expose endpoint, CLI install, **APIRule JWT auth (v2), APIRule NoAuth (v2), APIRule v1→v2 migration** |
 
-**APIRule version accuracy tests** (within `user_docs.yaml`): These specifically verify that the MCP returns up-to-date v2 information, as this is a common RAG failure mode (returning stale v1 docs):
+**APIRule version accuracy tests** (within `user_docs.yaml`): High-value showcase cases that demonstrate MCP's core value — the LLM's training data contains predominantly v1/v1beta1 APIRule docs, so without the MCP it will confidently give outdated answers (wrong `apiVersion`, nonexistent `accessStrategies` field). With the MCP returning up-to-date v2 docs, it answers correctly. These cases are expected to fail under condition A (no-tools) and pass under condition C (mcp), making them the clearest illustration of why the knowledge MCP exists.
 
 ```yaml
 - id: apirule_v2_version_check
