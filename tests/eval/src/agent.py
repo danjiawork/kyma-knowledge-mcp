@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 import json
+import os
 import subprocess
 from typing import Protocol, runtime_checkable
 
@@ -11,6 +13,8 @@ from duckduckgo_search import DDGS
 from openai import OpenAI
 
 from tests.eval.src.models import Condition
+
+MAX_TOOL_ROUNDS = 10
 
 
 def web_search(query: str, max_results: int = 5) -> str:
@@ -68,7 +72,7 @@ _SEARCH_KYMA_CONTRIBUTOR_DOCS_TOOL = {
 }
 
 
-def _get_rag_client(collection: str):  # type: ignore[return]
+def _get_rag_client(collection: str) -> LocalRAGClient:  # noqa: F821
     """Lazily load LocalRAGClient directly (bypasses MCP protocol for eval speed)."""
     from kyma_knowledge_mcp.config import settings
     from kyma_knowledge_mcp.local_rag_client import LocalRAGClient
@@ -95,8 +99,6 @@ class GitHubModelsAgent:
     """OpenAI-compatible agent backed by GitHub Models (free via GITHUB_TOKEN)."""
 
     def __init__(self, model: str = "gpt-4o-mini", api_key: str = "") -> None:
-        import os
-
         self.model = model
         self.client = OpenAI(
             base_url="https://models.inference.ai.azure.com",
@@ -119,7 +121,7 @@ class GitHubModelsAgent:
 
     def _call_with_web_search(self, question: str) -> str:
         messages: list[dict] = [{"role": "user", "content": question}]
-        while True:
+        for _ in range(MAX_TOOL_ROUNDS):
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -131,7 +133,7 @@ class GitHubModelsAgent:
                 return msg.content or ""
             # Append assistant message; fall back if model_dump() unavailable
             try:
-                messages.append(msg.model_dump())
+                messages.append(msg.model_dump(exclude_none=True))
             except AttributeError:
                 messages.append(
                     {"role": "assistant", "content": msg.content, "tool_calls": msg.tool_calls}
@@ -146,6 +148,7 @@ class GitHubModelsAgent:
                         "content": result,
                     }
                 )
+        raise RuntimeError(f"Tool call loop exceeded {MAX_TOOL_ROUNDS} rounds")
 
     def _call_with_mcp(self, question: str, collection: str) -> str:
         rag = _get_rag_client(collection)
@@ -153,7 +156,7 @@ class GitHubModelsAgent:
             _SEARCH_KYMA_DOCS_TOOL if collection == "user" else _SEARCH_KYMA_CONTRIBUTOR_DOCS_TOOL
         )
         messages: list[dict] = [{"role": "user", "content": question}]
-        while True:
+        for _ in range(MAX_TOOL_ROUNDS):
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -165,16 +168,19 @@ class GitHubModelsAgent:
                 return msg.content or ""
             # Append assistant message; fall back if model_dump() unavailable
             try:
-                messages.append(msg.model_dump())
+                messages.append(msg.model_dump(exclude_none=True))
             except AttributeError:
                 messages.append(
                     {"role": "assistant", "content": msg.content, "tool_calls": msg.tool_calls}
                 )
             for tc in msg.tool_calls:
                 args = json.loads(tc.function.arguments)
-                search_result = asyncio.run(
-                    rag.search_documents(args["query"], top_k=args.get("top_k", 5))
-                )
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                    fut = pool.submit(
+                        asyncio.run,
+                        rag.search_documents(args["query"], top_k=args.get("top_k", 5)),
+                    )
+                    search_result = fut.result()
                 content = "\n\n".join(d.content for d in search_result.documents)
                 messages.append(
                     {
@@ -183,6 +189,7 @@ class GitHubModelsAgent:
                         "content": content,
                     }
                 )
+        raise RuntimeError(f"Tool call loop exceeded {MAX_TOOL_ROUNDS} rounds")
 
 
 class ClaudeCliAgent:
@@ -221,7 +228,6 @@ class ClaudeCliAgent:
 
     def _run_claude_with_mcp(self, question: str) -> str:
         import json as _json
-        import os
         import tempfile
 
         config = {
