@@ -107,3 +107,23 @@ def test_run_eval_retry_on_agent_error():
     )
     assert len(report.results) == 1
     assert agent.answer.call_count == 2
+
+
+def test_run_case_all_retries_exhausted_produces_result():
+    """When all retries fail, run_case still returns a CaseResult."""
+    case = _make_case()
+    agent = MagicMock()
+    agent.answer.side_effect = RuntimeError("network error")
+
+    result = run_case(
+        case=case,
+        agent=agent,
+        llm_judge=_mock_judge(),
+        conditions=[Condition.MCP],
+        max_retries=2,
+    )
+    assert result.case_id == "c1"
+    assert Condition.MCP in result.results
+    assert agent.answer.call_count == 2  # tried twice
+    # The error string is scored — keyword won't match "Kubernetes" in the error message
+    assert result.results[Condition.MCP][0].passed is False

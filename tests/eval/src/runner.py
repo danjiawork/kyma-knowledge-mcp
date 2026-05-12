@@ -55,9 +55,10 @@ def run_eval(
             try:
                 result = future.result()
                 case_results.append(result)
-                _print_case_result(result, conditions)
+                _print_case_result(result, conditions, pass_threshold)
             except Exception as exc:
                 print(f"  [FATAL] {case.id} failed: {exc}", flush=True)
+                case_results.append(CaseResult(case_id=case.id, question=case.question))
             finally:
                 _ga_group_end()
 
@@ -72,7 +73,9 @@ def _ga_group_end() -> None:
     print("::endgroup::", flush=True)
 
 
-def _print_case_result(result: CaseResult, conditions: list[Condition]) -> None:
+def _print_case_result(
+    result: CaseResult, conditions: list[Condition], pass_threshold: float
+) -> None:
     for condition in conditions:
         exps = result.results.get(condition, [])
         if not exps:
@@ -80,7 +83,7 @@ def _print_case_result(result: CaseResult, conditions: list[Condition]) -> None:
         passed_count = sum(1 for e in exps if e.passed)
         rate = passed_count / len(exps)
         mandatory_ok = all(e.passed for e in exps if e.mandatory)
-        status = "✅" if mandatory_ok and rate >= 0.75 else "❌"
+        status = "✅" if mandatory_ok and rate >= pass_threshold else "❌"
         print(
             f"  [{condition.value:12s}] {passed_count}/{len(exps)} passed "
             f"({rate:.0%}) mandatory={'PASS' if mandatory_ok else 'FAIL'} {status}",
