@@ -31,9 +31,8 @@ jobs:
       - name: Run eval
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PYTHONPATH: .
         run: |
-          uv run python tests/eval/run_eval.py \
+          PYTHONPATH=. uv run python tests/eval/run_eval.py \
             --agent github-models \
             --save-results \
             --report both
