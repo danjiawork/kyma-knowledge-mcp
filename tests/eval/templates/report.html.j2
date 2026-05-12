@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kyma Knowledge MCP — Eval Report</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 1100px; margin: 0 auto; padding: 2rem; color: #1a1a1a; }
+    h1 { font-size: 1.5rem; }
+    .meta { color: #666; font-size: 0.9rem; margin-bottom: 2rem; }
+    .summary { display: flex; gap: 1.5rem; margin-bottom: 2rem; }
+    .score-card { background: #f5f5f5; border-radius: 8px; padding: 1rem 1.5rem; min-width: 160px; }
+    .score-card .label { font-size: 0.8rem; color: #666; text-transform: uppercase; }
+    .score-card .value { font-size: 2rem; font-weight: bold; }
+    .score-card.mcp .value { color: {% if report.ci_pass %}#16a34a{% else %}#dc2626{% endif %}; }
+    .ci-badge { display: inline-block; padding: 0.3rem 0.8rem; border-radius: 4px; font-weight: bold;
+                background: {% if report.ci_pass %}#dcfce7{% else %}#fee2e2{% endif %};
+                color: {% if report.ci_pass %}#15803d{% else %}#b91c1c{% endif %}; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th { background: #f0f0f0; text-align: left; padding: 0.5rem 0.75rem; font-size: 0.85rem; }
+    td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #e5e5e5; font-size: 0.85rem; vertical-align: top; }
+    .pass { color: #16a34a; font-weight: 600; }
+    .fail { color: #dc2626; font-weight: 600; }
+    details summary { cursor: pointer; color: #2563eb; }
+    .expectation { margin: 0.2rem 0; font-size: 0.8rem; }
+    .bar-chart { display: flex; gap: 0.5rem; align-items: flex-end; height: 80px; margin: 1rem 0; }
+    .bar { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+    .bar-fill { width: 60px; background: #3b82f6; border-radius: 4px 4px 0 0; }
+    .bar-fill.mcp { background: #16a34a; }
+    .bar-label { font-size: 0.75rem; color: #666; }
+    .bar-pct { font-size: 0.8rem; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>Kyma Knowledge MCP — Evaluation Report</h1>
+  <div class="meta">
+    Generated: {{ generated_at }} &nbsp;·&nbsp;
+    CI gate: <span class="ci-badge">{% if report.ci_pass %}PASS{% else %}FAIL{% endif %}</span>
+    &nbsp;·&nbsp; Pass threshold: {{ (report.pass_threshold * 100) | int }}%
+  </div>
+
+  <div class="summary">
+    {% for label, rate in condition_rates.items() %}
+    <div class="score-card {% if label == 'MCP' %}mcp{% endif %}">
+      <div class="label">{{ label }}</div>
+      <div class="value">{{ (rate * 100) | int }}%</div>
+      <div style="font-size:0.8rem;color:#666">pass rate</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="bar-chart">
+    {% for label, rate in condition_rates.items() %}
+    {% set bar_height = (rate * 72) if (rate * 72) > 4 else 4 %}
+    <div class="bar">
+      <div class="bar-pct">{{ (rate * 100) | int }}%</div>
+      <div class="bar-fill {% if label == 'MCP' %}mcp{% endif %}"
+           style="height: {{ bar_height | int }}px"></div>
+      <div class="bar-label">{{ label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Test Case</th>
+        <th>Question</th>
+        <th>No Tools</th>
+        <th>Web Search</th>
+        <th>MCP</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for result in report.results %}
+      <tr>
+        <td><code>{{ result.case_id }}</code></td>
+        <td>{{ result.question }}</td>
+        {% for condition in [Condition.NO_TOOLS, Condition.WEB_SEARCH, Condition.MCP] %}
+        {% set exps = result.results.get(condition, []) %}
+        <td>
+          {% if exps %}
+            {% set passed = exps | selectattr('passed') | list | length %}
+            {% set total = exps | length %}
+            {% set mandatory_fail_count = exps | selectattr('mandatory') | rejectattr('passed') | list | length %}
+            <span class="{% if mandatory_fail_count == 0 %}pass{% else %}fail{% endif %}">
+              {{ passed }}/{{ total }}
+            </span>
+            <details>
+              <summary>details</summary>
+              {% for e in exps %}
+              <div class="expectation">
+                {% if e.passed %}&#10003;{% else %}&#10007;{% endif %}
+                <strong>{{ e.name }}</strong> ({{ "%.2f"|format(e.score) }}): {{ e.reason[:100] }}
+              </div>
+              {% endfor %}
+            </details>
+          {% else %}
+            <span style="color:#999">&#8212;</span>
+          {% endif %}
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>
