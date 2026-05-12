@@ -7,9 +7,11 @@ import os
 from deepeval.models.base_model import DeepEvalBaseLLM
 from openai import OpenAI
 
+from tests.eval.src.rate_limiter import github_models_limiter
+
 
 class GitHubModelsLLM(DeepEvalBaseLLM):
-    """Wraps GitHub Models OpenAI-compatible endpoint as a DeepEval judge model."""
+    """Wraps GitHub Models endpoint as a DeepEval judge model."""
 
     def __init__(self, model: str = "gpt-4o-mini") -> None:
         self.model = model
@@ -18,7 +20,8 @@ class GitHubModelsLLM(DeepEvalBaseLLM):
             raise ValueError(
                 "GITHUB_TOKEN environment variable is required. "
                 "In GitHub Actions it is automatically available. "
-                "Locally, generate a token at https://github.com/settings/tokens ."
+                "Locally, generate a token at "
+                "https://github.com/settings/tokens ."
             )
         self.client = OpenAI(
             base_url="https://models.inference.ai.azure.com",
