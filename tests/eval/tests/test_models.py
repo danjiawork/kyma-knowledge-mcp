@@ -135,8 +135,6 @@ def test_case_result_all_pass():
 
 
 def test_eval_report_ci_pass():
-    from tests.eval.src.models import CaseResult, Condition, EvalReport, ExpectationResult
-
     results = [
         CaseResult(
             case_id="c1",
@@ -176,3 +174,27 @@ def test_eval_report_ci_fail_mandatory():
     ]
     report = EvalReport(results=results, pass_threshold=0.75)
     assert report.ci_pass is False
+
+
+def test_case_result_condition_pass_rate():
+    r = CaseResult(
+        case_id="c1",
+        question="Q?",
+        results={
+            Condition.MCP: [
+                ExpectationResult(
+                    name="x", score=0.8, threshold=0.5, mandatory=True, passed=True, reason="ok"
+                ),
+                ExpectationResult(
+                    name="y", score=0.3, threshold=0.5, mandatory=False, passed=False, reason="bad"
+                ),
+            ],
+        },
+    )
+    assert r.condition_pass_rate(Condition.MCP) == 0.5
+    assert r.condition_pass_rate(Condition.NO_TOOLS) == 0.0  # missing condition
+
+
+def test_case_result_condition_pass_missing_condition():
+    r = CaseResult(case_id="c1", question="Q?", results={})
+    assert r.condition_pass(Condition.MCP) is False

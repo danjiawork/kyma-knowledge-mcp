@@ -1,7 +1,8 @@
 """Pydantic models for the MCP eval framework."""
+
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Literal
 
@@ -9,7 +10,7 @@ import yaml
 from pydantic import BaseModel, Field, model_validator
 
 
-class Condition(str, Enum):
+class Condition(StrEnum):
     NO_TOOLS = "no_tools"
     WEB_SEARCH = "web_search"
     MCP = "mcp"
@@ -58,6 +59,8 @@ class CaseResult(BaseModel):
     results: dict[Condition, list[ExpectationResult]] = Field(default_factory=dict)
 
     def condition_pass(self, condition: Condition) -> bool:
+        if condition not in self.results:
+            return False
         expectations = self.results.get(condition, [])
         return all(e.passed for e in expectations if e.mandatory)
 
@@ -78,11 +81,7 @@ class EvalReport(BaseModel):
 
     @property
     def mcp_pass_rate(self) -> float:
-        all_exp = [
-            e
-            for r in self.results
-            for e in r.results.get(Condition.MCP, [])
-        ]
+        all_exp = [e for r in self.results for e in r.results.get(Condition.MCP, [])]
         if not all_exp:
             return 0.0
         return sum(1 for e in all_exp if e.passed) / len(all_exp)
