@@ -3,8 +3,6 @@ name: MCP Eval
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 permissions:
   contents: write   # needed for gh-pages push on main
@@ -34,20 +32,11 @@ jobs:
           # secrets.GITHUB_TOKEN alone does not have that scope.
           GITHUB_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
         run: |
-          # --workers 1: sequential execution avoids bursting past GitHub Models 15 RPM limit.
-          # On PRs run only condition C (MCP) to stay within the 150 req/day free-tier budget.
-          # On main pushes run all conditions so the GitHub Pages report shows A/B/C comparison.
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            EXTRA_FLAGS="--conditions mcp"
-          else
-            EXTRA_FLAGS=""
-          fi
           uv run python -m tests.eval.run_eval \
             --agent github-models \
             --workers 1 \
             --save-results \
-            --report both \
-            $EXTRA_FLAGS
+            --report both
 
 
       - name: Upload results artifact
