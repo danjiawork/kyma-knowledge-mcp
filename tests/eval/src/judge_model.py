@@ -13,9 +13,16 @@ class GitHubModelsLLM(DeepEvalBaseLLM):
 
     def __init__(self, model: str = "gpt-4o-mini") -> None:
         self.model = model
+        api_key = os.environ.get("GITHUB_TOKEN")
+        if not api_key:
+            raise ValueError(
+                "GITHUB_TOKEN environment variable is required. "
+                "In GitHub Actions it is automatically available. "
+                "Locally, generate a token at https://github.com/settings/tokens ."
+            )
         self.client = OpenAI(
             base_url="https://models.inference.ai.azure.com",
-            api_key=os.environ["GITHUB_TOKEN"],
+            api_key=api_key,
         )
 
     def load_model(self) -> OpenAI:
