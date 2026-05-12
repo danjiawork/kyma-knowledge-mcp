@@ -119,7 +119,7 @@ Same approach as kyma-companion: **GEval per expectation, threshold-based pass/f
 - `kind: keyword` — binary: 1.0 if regex matches, 0.0 otherwise; passes if `score >= threshold`
 - `kind: llm` — DeepEval `GEval` with `evaluation_steps=[expectation.description]`, `evaluation_params=[INPUT, ACTUAL_OUTPUT]`; passes if `score >= threshold`
 
-No `expected_output` or `retrieval_context` needed. GEval evaluates whether the actual response satisfies the criteria description — the same pattern as kyma-companion's `expectation.statement`.
+The `description` field is the ground truth in criteria form — it expresses what a correct answer must contain, without requiring a full reference answer. GEval evaluates whether the actual response satisfies each criterion. This is the same pattern as kyma-companion's `expectation.statement` and joule's `response relates to` assertions.
 
 ### CI gate — MCP condition only
 
