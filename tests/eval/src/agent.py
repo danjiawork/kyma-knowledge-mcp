@@ -113,6 +113,7 @@ class GitHubModelsAgent:
         return self._call_with_mcp(question, collection)
 
     def _call_no_tools(self, question: str) -> str:
+        github_models_limiter.wait()
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": question}],
@@ -122,6 +123,7 @@ class GitHubModelsAgent:
     def _call_with_web_search(self, question: str) -> str:
         messages: list[dict] = [{"role": "user", "content": question}]
         for _ in range(MAX_TOOL_ROUNDS):
+            github_models_limiter.wait()
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -157,6 +159,7 @@ class GitHubModelsAgent:
         )
         messages: list[dict] = [{"role": "user", "content": question}]
         for _ in range(MAX_TOOL_ROUNDS):
+            github_models_limiter.wait()
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,

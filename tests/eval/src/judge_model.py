@@ -29,6 +29,7 @@ class GitHubModelsLLM(DeepEvalBaseLLM):
         return self.client
 
     def generate(self, prompt: str) -> str:
+        github_models_limiter.wait()
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
