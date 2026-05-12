@@ -4,6 +4,8 @@ on:
   workflow_dispatch:  # manual trigger via GitHub Actions UI
   schedule:
     - cron: "0 9 * * 1"  # every Monday 09:00 UTC
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write   # needed for gh-pages push on main
@@ -14,20 +16,29 @@ jobs:
   eval:
     runs-on: ubuntu-latest
     steps:
+      - name: Skip on pull requests
+        if: github.event_name == 'pull_request'
+        run: echo "Eval skipped on PRs — runs on manual dispatch or weekly schedule only."
+
       - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
 
       - name: Set up Python
+        if: github.event_name != 'pull_request'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install uv
+        if: github.event_name != 'pull_request'
         uses: astral-sh/setup-uv@v4
 
       - name: Install dependencies
+        if: github.event_name != 'pull_request'
         run: uv sync --group eval
 
       - name: Run eval
+        if: github.event_name != 'pull_request'
         env:
           # GH_MODELS_TOKEN must be a PAT with the 'models' permission scope.
           # secrets.GITHUB_TOKEN alone does not have that scope.
@@ -39,16 +50,15 @@ jobs:
             --save-results \
             --report both
 
-
       - name: Upload results artifact
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: eval-results-${{ github.sha }}
           path: tests/eval/results/
 
       - name: Deploy to GitHub Pages
-        if: always() && github.ref == 'refs/heads/main'
+        if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
