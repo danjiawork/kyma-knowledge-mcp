@@ -53,7 +53,7 @@ def test_keyword_judge_reason_populated():
     assert len(result.reason) > 0
 
 
-def test_geval_judge_pass(monkeypatch):
+def test_geval_judge_pass():
     """GEvalJudge returns passed=True when GEval metric passes."""
     judge = GEvalJudge(model=MagicMock())
     mock_metric = MagicMock()
@@ -68,7 +68,7 @@ def test_geval_judge_pass(monkeypatch):
     assert result.passed is True
 
 
-def test_geval_judge_fail(monkeypatch):
+def test_geval_judge_fail():
     judge = GEvalJudge(model=MagicMock())
     mock_metric = MagicMock()
     mock_metric.score = 0.2
