@@ -1,8 +1,9 @@
 name: MCP Eval
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:  # manual trigger via GitHub Actions UI
+  schedule:
+    - cron: "0 9 * * 1"  # every Monday 09:00 UTC
 
 permissions:
   contents: write   # needed for gh-pages push on main
@@ -47,7 +48,7 @@ jobs:
           path: tests/eval/results/
 
       - name: Deploy to GitHub Pages
-        if: always() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: always() && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
