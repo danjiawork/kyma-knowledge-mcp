@@ -13,6 +13,7 @@ from duckduckgo_search import DDGS
 from openai import OpenAI
 
 from tests.eval.src.models import Condition
+from tests.eval.src.rate_limiter import github_models_limiter
 
 MAX_TOOL_ROUNDS = 10
 
