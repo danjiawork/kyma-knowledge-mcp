@@ -105,7 +105,49 @@ Test cases are YAML files under `cases/`. Each entry has:
 
 | File | Count | Topics |
 |------|-------|--------|
-| `user_docs.yaml` | ~15 | What is Kyma, modules, eventing, serverless, telemetry, Istio, BTP, KEDA, regions, hyperscalers, expose endpoint, CLI install, **APIRule JWT auth, APIRule NoAuth, APIRule v1→v2 migration** |
+| `user_docs.yaml` | ~15 | What is Kyma, modules, eventing, serverless, telemetry, Istio, BTP, KEDA, regions, hyperscalers, expose endpoint, CLI install, **APIRule JWT auth (v2), APIRule NoAuth (v2), APIRule v1→v2 migration** |
+
+**APIRule version accuracy tests** (within `user_docs.yaml`): These specifically verify that the MCP returns up-to-date v2 information, as this is a common RAG failure mode (returning stale v1 docs):
+
+```yaml
+- id: apirule_v2_version_check
+  question: "What is the latest version of APIRule in Kyma and what changed from v1?"
+  collection: user
+  source: original
+  expectations:
+    - name: mentions_v2
+      description: "States that the current/latest APIRule version is v2 (apiVersion: gateway.kyma-project.io/v2)"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+    - name: no_accessstrategies
+      description: "Does NOT recommend using the accessStrategies field, or explicitly states it was removed in v2"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+
+- id: apirule_jwt_v2
+  question: "How do I configure JWT authentication for an APIRule in Kyma?"
+  collection: user
+  source: original
+  expectations:
+    - name: uses_v2_apiversion
+      description: "Uses apiVersion: gateway.kyma-project.io/v2 in any YAML example, not v1beta1 or v1"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+    - name: no_accessstrategies_field
+      description: "Does not include accessStrategies field in the configuration (this field does not exist in v2)"
+      threshold: 0.5
+      mandatory: true
+      kind: llm
+    - name: mentions_jwt_config
+      description: "Mentions JWT issuer, JWKS URI, or token authentication configuration"
+      threshold: 0.5
+      mandatory: false
+      kind: keyword
+      pattern: "jwt|JWT|issuer|jwks"
+```
 | `contributor_docs.yaml` | ~8 | api-gateway contribution, eventing architecture, serverless tests, lifecycle manager, module creation, telemetry pipeline |
 
 ---
