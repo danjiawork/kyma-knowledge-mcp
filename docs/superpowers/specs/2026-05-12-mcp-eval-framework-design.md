@@ -39,9 +39,8 @@ tests/
 ├── integration/
 └── eval/
     ├── cases/
-    │   ├── user_docs.yaml          # User-facing Kyma questions
-    │   ├── contributor_docs.yaml   # Developer/contributor questions
-    │   └── apirule.yaml            # APIRule-specific questions
+    │   ├── user_docs.yaml          # User-facing Kyma questions (incl. APIRule)
+    │   └── contributor_docs.yaml   # Developer/contributor questions
     ├── src/
     │   ├── agent.py        # LLM agent abstraction (Claude CLI / GitHub Models)
     │   ├── judge.py        # Keyword match + DeepEval GEval judge
@@ -106,41 +105,39 @@ Test cases are YAML files under `cases/`. Each entry has:
 
 | File | Count | Topics |
 |------|-------|--------|
-| `user_docs.yaml` | ~12 | What is Kyma, modules, eventing, serverless, telemetry, Istio, BTP, KEDA, regions, hyperscalers, expose endpoint, CLI install |
+| `user_docs.yaml` | ~15 | What is Kyma, modules, eventing, serverless, telemetry, Istio, BTP, KEDA, regions, hyperscalers, expose endpoint, CLI install, **APIRule JWT auth, APIRule NoAuth, APIRule v1→v2 migration** |
 | `contributor_docs.yaml` | ~8 | api-gateway contribution, eventing architecture, serverless tests, lifecycle manager, module creation, telemetry pipeline |
-| `apirule.yaml` | ~6 | JWT auth, NoAuth, CORS, v1→v2 migration, expose multiple paths, mTLS |
 
 ---
 
 ## Scoring & Pass/Fail Logic
 
-### Per test case (per condition)
+Same approach as kyma-companion: **GEval per expectation, threshold-based pass/fail, no ground truth needed.**
 
-```
-mandatory_pass = all(e.score >= e.threshold for e in mandatory_expectations)
-optional_score = mean(e.score for e in optional_expectations)  # 0.0 if none
-total_score    = mean(e.score for e in all_expectations)
-case_pass      = mandatory_pass
-```
+### Per expectation
 
-### Per condition (across all test cases)
+- `kind: keyword` — binary: 1.0 if regex matches, 0.0 otherwise; passes if `score >= threshold`
+- `kind: llm` — DeepEval `GEval` with `evaluation_steps=[expectation.description]`, `evaluation_params=[INPUT, ACTUAL_OUTPUT]`; passes if `score >= threshold`
 
-```
-condition_score = mean(case.total_score for all cases)
-condition_pass  = all(case.case_pass for all cases)
-```
+No `expected_output` or `retrieval_context` needed. GEval evaluates whether the actual response satisfies the criteria description — the same pattern as kyma-companion's `expectation.statement`.
 
-### CI gate (condition C only)
+### CI gate — MCP condition only
+
+Conditions A (no-tools) and B (web-search) are **report-only**. They do not affect CI outcome.
 
 ```python
 PASS_THRESHOLD = 0.75  # configurable via env var EVAL_PASS_THRESHOLD
 
-ci_pass = (
-    mcp_condition_score >= PASS_THRESHOLD
-    and mcp_condition_pass  # all mandatory expectations met
-)
+# pass rate = fraction of all expectations that pass under condition C
+total         = len(all_expectations_across_all_cases)
+passed        = sum(1 for e in all_expectations if e.score >= e.threshold)
+mcp_pass_rate = passed / total
+
+ci_pass = mcp_pass_rate >= PASS_THRESHOLD
 exit(0 if ci_pass else 1)
 ```
+
+**Why pass rate, not average score:** "75% of all criteria satisfied" is directly interpretable. Average score mixes GEval floats from criteria of different difficulty and produces a number that is hard to reason about.
 
 ---
 
