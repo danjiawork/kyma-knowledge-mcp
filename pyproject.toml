@@ -35,6 +35,13 @@ dev = [
     "mypy>=1.20.2",
     "taskipy>=1.12.0",
 ]
+eval = [
+    "deepeval>=1.0.0",
+    "openai>=1.0.0",
+    "pyyaml>=6.0",
+    "jinja2>=3.1.0",
+    "duckduckgo-search>=6.0.0",
+]
 
 [tool.taskipy.tasks]
 lint = "ruff check . && ruff format --check . && mypy kyma_knowledge_mcp/"
