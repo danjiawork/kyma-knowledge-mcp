@@ -170,16 +170,21 @@ Conditions A (no-tools) and B (web-search) are **report-only**. They do not affe
 ```python
 PASS_THRESHOLD = 0.75  # configurable via env var EVAL_PASS_THRESHOLD
 
-# pass rate = fraction of all expectations that pass under condition C
-total         = len(all_expectations_across_all_cases)
-passed        = sum(1 for e in all_expectations if e.score >= e.threshold)
-mcp_pass_rate = passed / total
+mandatory   = [e for e in all_expectations_condition_C if e.mandatory]
+all_exp     = all_expectations_condition_C
 
-ci_pass = mcp_pass_rate >= PASS_THRESHOLD
+mandatory_pass = all(e.score >= e.threshold for e in mandatory)
+pass_rate      = sum(1 for e in all_exp if e.score >= e.threshold) / len(all_exp)
+
+ci_pass = mandatory_pass and pass_rate >= PASS_THRESHOLD
 exit(0 if ci_pass else 1)
 ```
 
-**Why pass rate, not average score:** "75% of all criteria satisfied" is directly interpretable. Average score mixes GEval floats from criteria of different difficulty and produces a number that is hard to reason about.
+**Two failure modes:**
+- Any `mandatory` expectation fails → immediate CI failure, regardless of overall pass rate (e.g. APIRule v2 case gives v1 answer)
+- Overall pass rate < 75% → CI failure even if all mandatory expectations pass
+
+This matches kyma-companion's logic and ensures showcase cases like APIRule v2 version accuracy cannot be masked by high scores elsewhere.
 
 ---
 
