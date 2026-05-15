@@ -1,0 +1,5 @@
+# Ignore per-run output; keep only named reports
+*
+!.gitignore
+!*_consistency.md
+!*-report.md
