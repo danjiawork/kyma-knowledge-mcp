@@ -32,9 +32,9 @@ def run_suite(
     kubeconfig: str = "",
 ) -> Path:
     """Run run_tests.py once, return the path to the JSON result file."""
-    print(f"\n{'━'*60}")
+    print(f"\n{'━' * 60}")
     print(f"  Run {run_index}/{total_runs}")
-    print(f"{'━'*60}\n")
+    print(f"{'━' * 60}\n")
 
     cmd = [sys.executable, str(SCRIPT_DIR / "run_tests.py")]
     if filter_str:
@@ -75,17 +75,16 @@ def build_consistency_report(run_results: list[tuple[str, dict[str, bool]]], tim
     n_runs = len(run_results)
 
     # Compute pass count per test
-    pass_counts = {
-        t: sum(1 for _, r in run_results if r.get(t, False))
-        for t in all_tests
-    }
+    pass_counts = {t: sum(1 for _, r in run_results if r.get(t, False)) for t in all_tests}
 
     # Sort: consistently failing first (0 passes), then flaky, then consistently passing
     def sort_key(t):
         p = pass_counts[t]
-        if p == 0:       return (0, t)   # always fail → top
-        if p == n_runs:  return (2, t)   # always pass → bottom
-        return (1, t)                    # flaky → middle
+        if p == 0:
+            return (0, t)  # always fail → top
+        if p == n_runs:
+            return (2, t)  # always pass → bottom
+        return (1, t)  # flaky → middle
 
     sorted_tests = sorted(all_tests, key=sort_key)
 
@@ -133,7 +132,7 @@ def build_consistency_report(run_results: list[tuple[str, dict[str, bool]]], tim
 
     # Summary section
     always_fail = [t for t in all_tests if pass_counts[t] == 0]
-    flaky       = [t for t in all_tests if 0 < pass_counts[t] < n_runs]
+    flaky = [t for t in all_tests if 0 < pass_counts[t] < n_runs]
     always_pass = [t for t in all_tests if pass_counts[t] == n_runs]
 
     lines += [
@@ -141,11 +140,11 @@ def build_consistency_report(run_results: list[tuple[str, dict[str, bool]]], tim
         "## Summary",
         "",
         f"- 🔴 **Always failing** ({len(always_fail)}): "
-        + (", ".join(t.replace(".feature","") for t in always_fail) if always_fail else "none"),
+        + (", ".join(t.replace(".feature", "") for t in always_fail) if always_fail else "none"),
         f"- 🟡 **Flaky** ({len(flaky)}): "
-        + (", ".join(t.replace(".feature","") for t in flaky) if flaky else "none"),
+        + (", ".join(t.replace(".feature", "") for t in flaky) if flaky else "none"),
         f"- 🟢 **Always passing** ({len(always_pass)}): "
-        + (", ".join(t.replace(".feature","") for t in always_pass) if always_pass else "none"),
+        + (", ".join(t.replace(".feature", "") for t in always_pass) if always_pass else "none"),
     ]
 
     return "\n".join(lines)
@@ -153,15 +152,29 @@ def build_consistency_report(run_results: list[tuple[str, dict[str, bool]]], tim
 
 def main():
     parser = argparse.ArgumentParser(description="Run test suite N times and compare consistency")
-    parser.add_argument("--runs", type=int, default=3, help="Number of times to run the suite (default 3)")
-    parser.add_argument("--filter", default="", help="Only run feature files matching this substring")
-    parser.add_argument("--no-mcp", action="store_true", help="Pass --no-mcp to run_tests.py (training knowledge only)")
-    parser.add_argument("--timeout", type=int, default=180, help="Per-test timeout passed to run_tests.py")
     parser.add_argument(
-        "--from-results", nargs="+", metavar="JSON",
-        help="Skip running tests; compare existing result JSON files instead"
+        "--runs", type=int, default=3, help="Number of times to run the suite (default 3)"
     )
-    parser.add_argument("--kubeconfig", default="", help="Path to kubeconfig (forwarded to run_tests.py)")
+    parser.add_argument(
+        "--filter", default="", help="Only run feature files matching this substring"
+    )
+    parser.add_argument(
+        "--no-mcp",
+        action="store_true",
+        help="Pass --no-mcp to run_tests.py (training knowledge only)",
+    )
+    parser.add_argument(
+        "--timeout", type=int, default=180, help="Per-test timeout passed to run_tests.py"
+    )
+    parser.add_argument(
+        "--from-results",
+        nargs="+",
+        metavar="JSON",
+        help="Skip running tests; compare existing result JSON files instead",
+    )
+    parser.add_argument(
+        "--kubeconfig", default="", help="Path to kubeconfig (forwarded to run_tests.py)"
+    )
     args = parser.parse_args()
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
@@ -181,8 +194,12 @@ def main():
         run_results = []
         for i in range(1, args.runs + 1):
             json_path = run_suite(
-                i, args.runs, args.filter, args.timeout,
-                no_mcp=args.no_mcp, kubeconfig=args.kubeconfig,
+                i,
+                args.runs,
+                args.filter,
+                args.timeout,
+                no_mcp=args.no_mcp,
+                kubeconfig=args.kubeconfig,
             )
             label = f"Run {i}"
             run_results.append((label, load_results(json_path)))
@@ -192,7 +209,7 @@ def main():
     report_path = RESULTS_DIR / f"{timestamp}_consistency.md"
     report_path.write_text(build_consistency_report(run_results, timestamp))
 
-    print(f"\n{'━'*60}")
+    print(f"\n{'━' * 60}")
     print(f"Consistency report: {report_path}")
 
     # Print quick summary to stdout
@@ -200,7 +217,7 @@ def main():
     n_runs = len(run_results)
     pass_counts = {t: sum(1 for _, r in run_results if r.get(t, False)) for t in all_tests}
     always_fail = [t for t in all_tests if pass_counts[t] == 0]
-    flaky       = [t for t in all_tests if 0 < pass_counts[t] < n_runs]
+    flaky = [t for t in all_tests if 0 < pass_counts[t] < n_runs]
     always_pass = [t for t in all_tests if pass_counts[t] == n_runs]
     print(f"🔴 Always failing: {len(always_fail)}")
     print(f"🟡 Flaky:          {len(flaky)}")
