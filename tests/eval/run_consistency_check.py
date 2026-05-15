@@ -23,7 +23,14 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 RESULTS_DIR = SCRIPT_DIR / "results"
 
 
-def run_suite(run_index: int, total_runs: int, filter_str: str, timeout: int) -> Path:
+def run_suite(
+    run_index: int,
+    total_runs: int,
+    filter_str: str,
+    timeout: int,
+    no_mcp: bool = False,
+    kubeconfig: str = "",
+) -> Path:
     """Run run_tests.py once, return the path to the JSON result file."""
     print(f"\n{'━'*60}")
     print(f"  Run {run_index}/{total_runs}")
@@ -34,6 +41,10 @@ def run_suite(run_index: int, total_runs: int, filter_str: str, timeout: int) ->
         cmd += ["--filter", filter_str]
     if timeout:
         cmd += ["--timeout", str(timeout)]
+    if no_mcp:
+        cmd += ["--no-mcp"]
+    if kubeconfig:
+        cmd += ["--kubeconfig", kubeconfig]
 
     existing_json = set(RESULTS_DIR.glob("*.json"))
     result = subprocess.run(cmd, cwd=SCRIPT_DIR)
@@ -144,11 +155,13 @@ def main():
     parser = argparse.ArgumentParser(description="Run test suite N times and compare consistency")
     parser.add_argument("--runs", type=int, default=3, help="Number of times to run the suite (default 3)")
     parser.add_argument("--filter", default="", help="Only run feature files matching this substring")
+    parser.add_argument("--no-mcp", action="store_true", help="Pass --no-mcp to run_tests.py (training knowledge only)")
     parser.add_argument("--timeout", type=int, default=180, help="Per-test timeout passed to run_tests.py")
     parser.add_argument(
         "--from-results", nargs="+", metavar="JSON",
         help="Skip running tests; compare existing result JSON files instead"
     )
+    parser.add_argument("--kubeconfig", default="", help="Path to kubeconfig (forwarded to run_tests.py)")
     args = parser.parse_args()
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
@@ -167,7 +180,10 @@ def main():
         # Run the suite N times
         run_results = []
         for i in range(1, args.runs + 1):
-            json_path = run_suite(i, args.runs, args.filter, args.timeout)
+            json_path = run_suite(
+                i, args.runs, args.filter, args.timeout,
+                no_mcp=args.no_mcp, kubeconfig=args.kubeconfig,
+            )
             label = f"Run {i}"
             run_results.append((label, load_results(json_path)))
 

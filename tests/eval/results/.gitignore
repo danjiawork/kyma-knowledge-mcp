@@ -1,0 +1,4 @@
+# Ignore per-run output; keep only consistency reports
+*
+!.gitignore
+!*_consistency.md

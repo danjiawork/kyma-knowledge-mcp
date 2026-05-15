@@ -8,8 +8,9 @@ For cluster tests (resourceName set), a kubeconfig must be provided.
 A second Claude instance acts as judge for each test.
 
 Usage:
-  python run_tests.py                        # run all tests
+  python run_tests.py                        # run all tests (needs kubeconfig for cluster tests)
   python run_tests.py --filter question      # run only question tests (no cluster needed)
+  python run_tests.py --no-mcp               # answer from training knowledge only, no tools
   python run_tests.py --timeout 120          # per-test timeout in seconds (default 180)
   python run_tests.py --trace                # save stream-json trace per test to results/
   python run_tests.py --kubeconfig <path>    # kubeconfig for cluster tests
@@ -32,6 +33,13 @@ SYSTEM_PROMPT_FILE = SCRIPT_DIR / "system_prompt.md"
 RESULTS_DIR = SCRIPT_DIR / "results"
 ENV_FILE = SCRIPT_DIR / ".env"
 KUBECONFIG_FILE = Path(os.environ.get("KUBECONFIG", "kubeconfig.yaml"))
+
+_NO_MCP_SYSTEM_PROMPT = """\
+You are an expert in Kyma and Kubernetes.
+Answer the question using only your own training knowledge. No tools are available.
+If you are not confident about an answer, say so rather than guessing.
+Always respond in Markdown.
+"""
 
 
 # ── Env loading ───────────────────────────────────────────────────────────────
@@ -106,6 +114,7 @@ def run_tested_claude(
     user_message: str,
     timeout: int,
     kubeconfig: str,
+    no_mcp: bool = False,
     trace_path: Path | None = None,
 ) -> tuple[str, str]:
     """
@@ -114,36 +123,55 @@ def run_tested_claude(
     If trace_path is set, saves the raw stream-json to that file.
     """
     env = os.environ.copy()
-    env["KUBECONFIG"] = kubeconfig
-    env.setdefault("GCTL_SESSION_ID", "pure-claude-test")
+    env.setdefault("GCTL_SESSION_ID", "capability-test")
 
-    # Inject kubeconfig path into the system prompt so Claude uses it explicitly
-    # in every kubectl command — env inheritance is unreliable across subprocess boundaries.
-    augmented_prompt = (
-        system_prompt
-        + f"\n\n## Cluster Access\n\nAlways use this kubeconfig explicitly in every kubectl command:\n```\nkubectl --kubeconfig={kubeconfig} ...\n```\n"
-    )
+    if no_mcp:
+        # Pure training knowledge — no tools, no kubeconfig injection
+        prompt = system_prompt
+        extra_flags = ["--tools", ""]
+    else:
+        # Inject kubeconfig path so Claude uses it explicitly in every kubectl command.
+        prompt = (
+            system_prompt
+            + f"\n\n## Cluster Access\n\nAlways use this kubeconfig explicitly in every kubectl command:\n```\nkubectl --kubeconfig={kubeconfig} ...\n```\n"
+        )
+        env["KUBECONFIG"] = kubeconfig
+        extra_flags = ["--dangerously-skip-permissions"]
 
     if trace_path:
         output_format = "stream-json"
-        extra_flags = ["--verbose"]
+        extra_flags += ["--verbose"]
     else:
         output_format = "json"
-        extra_flags = []
 
-    cmd = [
-        "claude",
-        "-p",
-        "--system-prompt",
-        augmented_prompt,
-        "--dangerously-skip-permissions",
-        "--output-format",
-        output_format,
-        "--model",
-        "claude-sonnet-4-6",
-        *extra_flags,
-        user_message,
-    ]
+    if no_mcp:
+        # --tools "" requires the prompt via stdin, not as a positional arg
+        cmd = [
+            "claude",
+            "-p",
+            "--system-prompt",
+            prompt,
+            "--output-format",
+            output_format,
+            "--model",
+            "claude-sonnet-4-6",
+            *extra_flags,
+        ]
+        stdin_input = user_message
+    else:
+        cmd = [
+            "claude",
+            "-p",
+            "--system-prompt",
+            prompt,
+            "--output-format",
+            output_format,
+            "--model",
+            "claude-sonnet-4-6",
+            *extra_flags,
+            user_message,
+        ]
+        stdin_input = None
 
     try:
         result = subprocess.run(
@@ -152,6 +180,7 @@ def run_tested_claude(
             text=True,
             timeout=timeout,
             env=env,
+            input=stdin_input,
         )
         if result.returncode != 0:
             return "", f"claude exited {result.returncode}: {result.stderr[:500]}"
@@ -366,6 +395,11 @@ def main():
         "--filter", default="", help="Only run feature files matching this substring"
     )
     parser.add_argument(
+        "--no-mcp",
+        action="store_true",
+        help="Answer from training knowledge only — no tools, no MCP, no kubeconfig needed",
+    )
+    parser.add_argument(
         "--timeout", type=int, default=180, help="Per-test timeout in seconds (default 180)"
     )
     parser.add_argument(
@@ -387,20 +421,23 @@ def main():
     # Load env
     env = load_env(ENV_FILE)
 
-    # Load system prompt
-    if not SYSTEM_PROMPT_FILE.exists():
-        print(f"ERROR: {SYSTEM_PROMPT_FILE} not found")
-        sys.exit(1)
-    system_prompt = SYSTEM_PROMPT_FILE.read_text()
+    # Select system prompt
+    if args.no_mcp:
+        system_prompt = _NO_MCP_SYSTEM_PROMPT
+    else:
+        if not SYSTEM_PROMPT_FILE.exists():
+            print(f"ERROR: {SYSTEM_PROMPT_FILE} not found")
+            sys.exit(1)
+        system_prompt = SYSTEM_PROMPT_FILE.read_text()
 
-    # Resolve kubeconfig: --kubeconfig arg > KUBECONFIG env > default path
+    # Resolve kubeconfig (only needed for cluster tests)
     if args.kubeconfig:
         kubeconfig = args.kubeconfig
     elif env.get("KUBECONFIG"):
         kubeconfig = env["KUBECONFIG"]
     else:
         kubeconfig = str(KUBECONFIG_FILE)
-    if not Path(kubeconfig).exists():
+    if not args.no_mcp and not Path(kubeconfig).exists():
         print(
             f"WARNING: kubeconfig not found at {kubeconfig}, kubectl may not work for cluster tests"
         )
@@ -415,7 +452,7 @@ def main():
 
     print(f"Found {len(feature_files)} test(s) to run\n")
 
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     all_results = []
 
     for feature_file in feature_files:
@@ -438,7 +475,12 @@ Question: {parsed["question"]}"""
             results_dir / f"{timestamp}_{feature_file.stem}_trace.jsonl" if args.trace else None
         )
         response, error = run_tested_claude(
-            system_prompt, user_message, args.timeout, kubeconfig, trace_path
+            system_prompt,
+            user_message,
+            args.timeout,
+            kubeconfig,
+            no_mcp=args.no_mcp,
+            trace_path=trace_path,
         )
 
         if error:
