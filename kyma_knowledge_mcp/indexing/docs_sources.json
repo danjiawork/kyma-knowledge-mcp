@@ -445,7 +445,6 @@
     "source_type": "Github",
     "url": "https://github.com/kyma-project/cloud-manager.git",
     "include_files": [
-      "docs/agents/*",
       "docs/contributor/*"
     ]
   },
