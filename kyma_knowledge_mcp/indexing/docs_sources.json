@@ -239,7 +239,8 @@
       "tutorials/private-link-microsoft-azure/*",
       "tutorials/private-link-onboarding/*",
       "tutorials/private-link-service-onboarding-aws/*",
-      "tutorials/cp-kyma-postgres-cap/*"
+      "tutorials/cp-kyma-postgres-cap/*",
+      "tutorials/cp-kyma-app-push/*"
     ]
   },
   {
@@ -446,7 +447,8 @@
     "source_type": "Github",
     "url": "https://github.com/kyma-project/cloud-manager.git",
     "include_files": [
-      "docs/contributor/*"
+      "docs/contributor/*",
+      "docs/agents/personas/*"
     ]
   },
   {
