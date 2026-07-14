@@ -1,3 +1,14 @@
 {
-  "repos": []
+  "repos": [
+    {
+      "repo": "kyma-project/ip-auth",
+      "reason": "early prototype (README self-describes as not for production), docs/user and docs/contributor are stubs",
+      "review_after": "2027-01-14"
+    },
+    {
+      "repo": "kyma-project/auditlog-manager",
+      "reason": "docs/user and docs/contributor are stubs (README + sidebar only), no indexable content yet",
+      "review_after": "2027-01-14"
+    }
+  ]
 }

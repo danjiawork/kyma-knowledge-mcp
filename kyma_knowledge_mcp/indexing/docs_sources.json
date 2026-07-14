@@ -549,30 +549,6 @@
     ]
   },
   {
-    "name": "auditlog-manager",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/auditlog-manager.git",
-    "include_files": [
-      "docs/user/*"
-    ],
-    "exclude_files": [
-      "docs/user/README.md",
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "ans-manager",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/ans-manager.git",
-    "include_files": [
-      "docs/user/*"
-    ],
-    "exclude_files": [
-      "docs/user/README.md",
-      "*/_sidebar.md"
-    ]
-  },
-  {
     "name": "kyma-infrastructure-manager",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/kyma-infrastructure-manager.git",
@@ -609,18 +585,6 @@
     "name": "eventing-publisher-proxy",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/eventing-publisher-proxy.git",
-    "include_files": [
-      "docs/user/*"
-    ],
-    "exclude_files": [
-      "docs/user/README.md",
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "eventing-publisher-proxy",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/eventing-publisher-proxy.git",
     "collection": "contributor",
     "include_files": [
       "docs/contributor/*"
@@ -642,45 +606,6 @@
     "name": "gpu",
     "source_type": "Github",
     "url": "https://github.com/kyma-project/gpu.git",
-    "collection": "contributor",
-    "include_files": [
-      "docs/contributor/*"
-    ]
-  },
-  {
-    "name": "ip-auth",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/ip-auth.git",
-    "include_files": [
-      "docs/user/*"
-    ],
-    "exclude_files": [
-      "docs/user/README.md",
-      "*/_sidebar.md"
-    ]
-  },
-  {
-    "name": "ip-auth",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/ip-auth.git",
-    "collection": "contributor",
-    "include_files": [
-      "docs/contributor/*"
-    ]
-  },
-  {
-    "name": "auditlog-manager",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/auditlog-manager.git",
-    "collection": "contributor",
-    "include_files": [
-      "docs/contributor/*"
-    ]
-  },
-  {
-    "name": "ans-manager",
-    "source_type": "Github",
-    "url": "https://github.com/kyma-project/ans-manager.git",
     "collection": "contributor",
     "include_files": [
       "docs/contributor/*"

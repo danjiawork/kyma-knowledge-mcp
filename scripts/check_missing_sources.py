@@ -35,6 +35,8 @@ _BLOCKLIST_SUBSTRINGS = [
     "security-test",
     "networking-dev",
     "wait-for-commit",
+    "eventing-publisher-proxy",  # internal proxy, not user-configurable
+    "ans-manager",  # PoC project, README self-describes as not for production
 ]
 
 # Subdirectory names under docs/ that are not user-facing content.
