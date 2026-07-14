@@ -4,13 +4,13 @@ version = "0.1.0"
 description = "MCP server providing local Kyma knowledge and context for AI agents"
 requires-python = ">=3.12"
 dependencies = [
-    "mcp>=1.27.2",
+    "mcp>=1.28.1",
     "pydantic>=2.13.4",
-    "pydantic-settings>=2.14.1",
+    "pydantic-settings>=2.14.2",
     "chromadb>=1.5.9",
     "fastembed>=0.4.0",
     "flashrank>=0.2.0",
-    "langchain-core>=1.4.7",
+    "langchain-core>=1.4.9",
     "langchain-text-splitters>=0.3.0",
     "tiktoken>=0.13.0",
 ]
@@ -28,11 +28,11 @@ packages = ["kyma_knowledge_mcp"]
 
 [dependency-groups]
 dev = [
-    "pytest>=9.1.0",
+    "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=4.1.0",
-    "ruff>=0.15.17",
-    "mypy>=2.1.0",
+    "ruff>=0.15.21",
+    "mypy>=2.2.0",
     "taskipy>=1.12.0",
 ]
 
